@@ -117,48 +117,92 @@ export const useMutateChatPrompt = () => {
       ]);
 
       try {
+        const requestBody = {
+          question,
+          session_id: sessionId,
+          message_id_user: messageIdUser,
+          message_id_ai: messageIdAi,
+          user_id: userEmail,
+          selected_backend: agent || undefined,
+          is_prompt_from_agent_page: isPromptFromAgentPage,
+          gcs_uris: {
+            'is_unstructured=True': [],
+            'is_unstructured=False': [],
+          },
+          files: files.map((f) => ({
+            name: f.name,
+            type: f.type,
+          })),
+        };
+
         const response = await apiFetch(ENDPOINTS.CHAT, {
           method: 'POST',
-          body: JSON.stringify({
-            question,
-            session_id: sessionId,
-            message_id_user: messageIdUser,
-            message_id_ai: messageIdAi,
-            user_id: userEmail,
-            selected_backend: agent || undefined,
-            is_prompt_from_agent_page: isPromptFromAgentPage,
-            gcs_uris: {
-              'is_unstructured=True': [],
-              'is_unstructured=False': [],
-            },
-            files: files.map((f) => ({
-              name: f.name,
-              type: f.type,
-            })),
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         });
 
         if (!response.ok) {
           const errorText = await response.text();
+          console.error('Chat error response:', errorText);
           throw new Error(errorText || 'Chat request failed');
         }
 
+        // Initialize variables for message accumulation
+        let accumulatedMessage = '';
+        let accumulatedStatus: string[] = [];
+        let accumulatedContents: any[] = [];
+
         // Stream the response
+        // Note: React Native fetch may not support streaming in all cases
         const reader = response.body?.getReader();
+
         if (!reader) {
-          throw new Error('No response body');
+          // Fallback: read as text if streaming not supported
+          const text = await response.text();
+
+          // Try to parse as SSE events
+          const events = text.split(/\r?\n\r?\n/);
+          for (const event of events) {
+            if (!event.trim()) continue;
+            const parsed = parseStreamChunk(event);
+            if (parsed?.message) {
+              accumulatedMessage = parsed.message;
+            }
+            if (parsed?.status) {
+              for (const status of parsed.status) {
+                if (!accumulatedStatus.includes(status)) {
+                  accumulatedStatus.push(status);
+                }
+              }
+            }
+          }
+
+          // Update cache with final result
+          queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+            const updated = [...old];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                message: accumulatedMessage || 'Response received but no message content found.',
+                status: undefined,
+              };
+            }
+            return updated;
+          });
+
+          return { success: true, messageIdAi };
         }
 
         const decoder = new TextDecoder();
         let buffer = '';
-        let accumulatedMessage = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
+          const decodedChunk = decoder.decode(value, { stream: true });
+          buffer += decodedChunk;
           const chunks = buffer.split(/\r?\n\r?\n/);
           buffer = chunks.pop() || '';
 
@@ -167,9 +211,23 @@ export const useMutateChatPrompt = () => {
 
             const parsed = parseStreamChunk(chunk);
             if (parsed) {
-              // Accumulate message content
+              // Accumulate message content (CALL_BACKEND returns full message)
               if (parsed.message) {
                 accumulatedMessage = parsed.message;
+              }
+
+              // Accumulate status messages (each event adds to status)
+              if (parsed.status && parsed.status.length > 0) {
+                for (const status of parsed.status) {
+                  if (!accumulatedStatus.includes(status)) {
+                    accumulatedStatus.push(status);
+                  }
+                }
+              }
+
+              // Accumulate contents
+              if (parsed.contents && parsed.contents.length > 0) {
+                accumulatedContents = [...accumulatedContents, ...parsed.contents];
               }
 
               // Update the AI message in cache
@@ -181,9 +239,9 @@ export const useMutateChatPrompt = () => {
                   updated[lastIndex] = {
                     ...updated[lastIndex],
                     message: accumulatedMessage,
-                    status: parsed.status,
-                    contents: parsed.contents,
-                    suggestedAgents: parsed.suggestedAgents,
+                    status: [...accumulatedStatus],
+                    contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
+                    suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
                   };
                 }
 

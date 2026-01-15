@@ -58,6 +58,7 @@ export const apiFetch = async (
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true', // Bypass ngrok warning page
       ...options.headers,
     },
   };

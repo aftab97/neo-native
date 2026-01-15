@@ -1,10 +1,10 @@
 // API Configuration
 // Configure based on environment - update these URLs for your BFF
 
-const DEV_API_URL = 'http://localhost:8080';
-const PROD_API_URL = 'https://your-bff-url.com'; // TODO: Update with production BFF URL
+const DEV_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
+const PROD_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
 
-export const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+export const API_BASE_URL = DEV_API_URL;
 
 // API Endpoints
 export const ENDPOINTS = {

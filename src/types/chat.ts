@@ -1,5 +1,13 @@
+export enum ChatContentType {
+  TEXT = 'text',
+  THOUGHT = 'thought',
+  CHART = 'chart',
+  IMAGE = 'image',
+  CODE = 'code',
+}
+
 export interface MessageContent {
-  type: 'text' | 'thought' | 'chart' | 'image' | 'code';
+  type: 'text' | 'thought' | 'chart' | 'image' | 'code' | ChatContentType;
   content?: string;
   thought?: string;
   thought_title?: string;

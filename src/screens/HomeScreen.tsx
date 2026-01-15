@@ -29,7 +29,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
       },
       {
         onSuccess: () => {
-          // Navigate to chat screen
           navigation.navigate('Chat', { sessionId, agent: selectedAgent || undefined });
         },
       }

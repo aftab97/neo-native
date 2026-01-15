@@ -6,21 +6,49 @@ import { ChatHistory, ChatMessage } from '../types/chat';
 import { usePopupStore } from '../store';
 
 interface HistoryTitlesResponse {
-  titles: ChatHistory[];
+  sessions: Array<{
+    session_id: string;
+    session_title: string | null;
+    last_updated: string | null;
+  }>;
 }
 
 /**
  * Fetch chat history titles (recent conversations)
  */
 export const useGetChatTitles = () => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.chatTitles,
     queryFn: async () => {
-      const response = await apiFetchJson<HistoryTitlesResponse>(
-        ENDPOINTS.HISTORY_TITLES,
-        { method: 'POST' }
-      );
-      return response.titles || [];
+      // Get user email from cache
+      const user = queryClient.getQueryData<{ email: string }>(queryKeys.user);
+
+      if (!user?.email) {
+        return [];
+      }
+
+      const response = await apiFetch(ENDPOINTS.HISTORY_TITLES, {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: user.email,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat titles');
+      }
+
+      const data: HistoryTitlesResponse = await response.json();
+
+      // Map to ChatHistory format
+      return (data.sessions || []).map((session) => ({
+        session_id: session.session_id,
+        title: session.session_title || 'Untitled Chat',
+        updated_at: session.last_updated || '',
+        created_at: session.last_updated || '',
+      }));
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
@@ -52,12 +80,31 @@ export const useMutateChatHistory = () => {
         throw new Error('Failed to load chat history');
       }
 
-      return response.json() as Promise<{ messages: ChatMessage[] }>;
+      const data = await response.json();
+      console.log('History API response:', JSON.stringify(data, null, 2));
+
+      // Handle different response formats
+      // Could be: array directly, { messages: [...] }, or other format
+      let messages: ChatMessage[] = [];
+
+      if (Array.isArray(data)) {
+        messages = data;
+      } else if (data?.messages && Array.isArray(data.messages)) {
+        messages = data.messages;
+      } else if (data?.history && Array.isArray(data.history)) {
+        messages = data.history;
+      }
+
+      return { messages, sessionId };
     },
     onSuccess: (data, variables) => {
       // Store the loaded history in the query cache
       const chatKey = queryKeys.chatById(variables.sessionId);
-      queryClient.setQueryData(chatKey, data.messages || []);
+      console.log('Storing messages in cache:', chatKey, data.messages.length, 'messages');
+      queryClient.setQueryData(chatKey, data.messages);
+    },
+    onError: (error) => {
+      console.error('Failed to load history:', error);
     },
   });
 };
