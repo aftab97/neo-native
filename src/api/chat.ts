@@ -172,8 +172,9 @@ export const useMutateChatPrompt = () => {
           for (const event of events) {
             if (!event.trim()) continue;
             const parsed = parseStreamChunk(event);
+            // Append message content (BFF sends incremental chunks)
             if (parsed?.message) {
-              accumulatedMessage = parsed.message;
+              accumulatedMessage += parsed.message;
             }
             if (parsed?.status) {
               for (const status of parsed.status) {
@@ -204,9 +205,61 @@ export const useMutateChatPrompt = () => {
         const decoder = new TextDecoder();
         let buffer = '';
 
+        // Helper to process a single chunk
+        const processChunk = (chunk: string) => {
+          if (!chunk.trim()) return;
+
+          const parsed = parseStreamChunk(chunk);
+          if (parsed) {
+            // Accumulate message content - APPEND to existing (BFF sends incremental chunks)
+            if (parsed.message) {
+              accumulatedMessage += parsed.message;
+            }
+
+            // Accumulate status messages (each event adds to status)
+            if (parsed.status && parsed.status.length > 0) {
+              for (const status of parsed.status) {
+                if (!accumulatedStatus.includes(status)) {
+                  accumulatedStatus.push(status);
+                }
+              }
+            }
+
+            // Accumulate contents
+            if (parsed.contents && parsed.contents.length > 0) {
+              accumulatedContents = [...accumulatedContents, ...parsed.contents];
+            }
+
+            // Update the AI message in cache
+            queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+              const updated = [...old];
+              const lastIndex = updated.length - 1;
+
+              if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+                updated[lastIndex] = {
+                  ...updated[lastIndex],
+                  message: accumulatedMessage,
+                  status: [...accumulatedStatus],
+                  contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
+                  suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
+                };
+              }
+
+              return updated;
+            });
+          }
+        };
+
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+
+          if (done) {
+            // Process any remaining buffer content before exiting
+            if (buffer.trim()) {
+              processChunk(buffer);
+            }
+            break;
+          }
 
           const decodedChunk = decoder.decode(value, { stream: true });
           buffer += decodedChunk;
@@ -214,47 +267,7 @@ export const useMutateChatPrompt = () => {
           buffer = chunks.pop() || '';
 
           for (const chunk of chunks) {
-            if (!chunk.trim()) continue;
-
-            const parsed = parseStreamChunk(chunk);
-            if (parsed) {
-              // Accumulate message content (CALL_BACKEND returns full message)
-              if (parsed.message) {
-                accumulatedMessage = parsed.message;
-              }
-
-              // Accumulate status messages (each event adds to status)
-              if (parsed.status && parsed.status.length > 0) {
-                for (const status of parsed.status) {
-                  if (!accumulatedStatus.includes(status)) {
-                    accumulatedStatus.push(status);
-                  }
-                }
-              }
-
-              // Accumulate contents
-              if (parsed.contents && parsed.contents.length > 0) {
-                accumulatedContents = [...accumulatedContents, ...parsed.contents];
-              }
-
-              // Update the AI message in cache
-              queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
-                const updated = [...old];
-                const lastIndex = updated.length - 1;
-
-                if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    message: accumulatedMessage,
-                    status: [...accumulatedStatus],
-                    contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
-                    suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
-                  };
-                }
-
-                return updated;
-              });
-            }
+            processChunk(chunk);
           }
         }
 
