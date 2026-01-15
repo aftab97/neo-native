@@ -72,6 +72,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
       sessionId,
       agent: activeAgent || undefined,
       userEmail: user?.email || 'anonymous@example.com',
+      // Use session-based cache key when continuing a history chat
+      isHistoryChat: !!routeSessionId,
     });
   };
 
@@ -109,6 +111,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
         onSend={handleSend}
         onCancel={handleCancel}
         placeholder={activeAgent ? `Ask ${activeAgent}...` : 'Ask Neo...'}
+        isLoading={chatMutation.isPending}
       />
     </KeyboardAvoidingView>
   );

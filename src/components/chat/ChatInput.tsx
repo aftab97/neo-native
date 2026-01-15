@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -6,45 +6,46 @@ import {
   StyleSheet,
   Keyboard,
   Platform,
+  Text,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayoutStore, useChatStore, useRequestStore } from '../../store';
-
-// Icon placeholders
-const SendIcon = ({ color }: { color: string }) => (
-  <TextInput
-    editable={false}
-    style={{ fontSize: 20, color, textAlign: 'center' }}
-    value="➤"
-  />
-);
-
-const StopIcon = ({ color }: { color: string }) => (
-  <TextInput
-    editable={false}
-    style={{ fontSize: 20, color, textAlign: 'center' }}
-    value="■"
-  />
-);
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   onCancel?: () => void;
   placeholder?: string;
+  /** External loading state (e.g., from mutation.isPending) */
+  isLoading?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   onCancel,
   placeholder = 'Ask Neo...',
+  isLoading = false,
 }) => {
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
-  const { inputValue, setInputValue, isPromptPaused } = useChatStore();
   const { abortController } = useRequestStore();
 
+  // Use store's inputValue only for initial/external values (e.g., suggestions)
+  const storeInputValue = useChatStore((state) => state.inputValue);
+  const setStoreInputValue = useChatStore((state) => state.setInputValue);
+
+  // Local state for the actual input - more reliable than global store
+  const [localValue, setLocalValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+
+  // Sync from store when it changes externally (e.g., suggestion clicked)
+  useEffect(() => {
+    if (storeInputValue && storeInputValue !== localValue) {
+      setLocalValue(storeInputValue);
+      // Clear the store value after syncing
+      setStoreInputValue('');
+    }
+  }, [storeInputValue]);
 
   const backgroundColor = isDarkTheme ? '#21232c' : '#ffffff';
   const textColor = isDarkTheme ? '#ffffff' : '#21232c';
@@ -56,18 +57,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     : '#e0e3e6';
   const accentColor = '#0158ab';
 
-  const canSend = inputValue.trim().length > 0 && !isPromptPaused;
-  const isGenerating = isPromptPaused && abortController;
+  const hasText = localValue.trim().length > 0;
+  const canSend = hasText && !isLoading;
+  const isGenerating = isLoading && abortController;
 
   const handleSend = () => {
-    if (canSend) {
-      onSend(inputValue.trim());
+    const message = localValue.trim();
+    if (message && !isLoading) {
+      onSend(message);
+      setLocalValue(''); // Clear immediately
       Keyboard.dismiss();
     }
   };
 
   const handleCancel = () => {
     onCancel?.();
+  };
+
+  const handleChangeText = (text: string) => {
+    setLocalValue(text);
   };
 
   return (
@@ -91,14 +99,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           style={[styles.input, { color: textColor }]}
           placeholder={placeholder}
           placeholderTextColor={placeholderColor}
-          value={inputValue}
-          onChangeText={setInputValue}
+          value={localValue}
+          onChangeText={handleChangeText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onSubmitEditing={handleSend}
           multiline
           maxLength={10000}
-          editable={!isPromptPaused}
+          editable={!isLoading}
           returnKeyType="send"
           blurOnSubmit={false}
           accessibilityLabel="Chat input"
@@ -120,14 +128,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           ]}
           onPress={isGenerating ? handleCancel : handleSend}
           disabled={!canSend && !isGenerating}
+          activeOpacity={0.7}
           accessibilityLabel={isGenerating ? 'Stop generating' : 'Send message'}
           accessibilityRole="button"
         >
-          {isGenerating ? (
-            <StopIcon color="#ffffff" />
-          ) : (
-            <SendIcon color={canSend ? '#ffffff' : placeholderColor} />
-          )}
+          <Text style={[styles.buttonIcon, { color: canSend || isGenerating ? '#ffffff' : placeholderColor }]}>
+            {isGenerating ? '■' : '➤'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -166,5 +173,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
+  },
+  buttonIcon: {
+    fontSize: 18,
+    fontWeight: '600',
   },
 });

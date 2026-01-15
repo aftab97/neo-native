@@ -85,6 +85,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
       <ChatInput
         onSend={handleSend}
         placeholder={`Ask ${agent.label}...`}
+        isLoading={chatMutation.isPending}
       />
     </KeyboardAvoidingView>
   );

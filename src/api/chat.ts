@@ -18,6 +18,8 @@ interface ChatPromptVariables {
   userEmail: string;
   files?: any[];
   isPromptFromAgentPage?: boolean;
+  /** Use session-based cache key (for continuing history chats) */
+  isHistoryChat?: boolean;
 }
 
 /**
@@ -58,7 +60,7 @@ export const useChatBySessionId = (sessionId?: string | null) => {
  */
 export const useMutateChatPrompt = () => {
   const queryClient = useQueryClient();
-  const { setIsPromptPaused, setInputValue, setLastPrompt } = useChatStore();
+  const { setIsPromptPaused, setLastPrompt } = useChatStore();
   const { setSelectedAgent } = useAgentStore();
   const { setAbortController, setMessageIdUser } = useRequestStore();
   const { addSnackbar } = usePopupStore();
@@ -72,6 +74,7 @@ export const useMutateChatPrompt = () => {
         userEmail,
         files = [],
         isPromptFromAgentPage = false,
+        isHistoryChat = false,
       } = variables;
 
       // Generate unique message IDs
@@ -91,10 +94,14 @@ export const useMutateChatPrompt = () => {
       // Update UI state
       setIsPromptPaused(true);
       setLastPrompt(question);
-      setInputValue('');
 
       // Determine cache key based on context
-      const chatKey = agent ? queryKeys.chat(agent) : queryKeys.chat();
+      // For history chats, use session-based key so UI updates correctly
+      const chatKey = isHistoryChat && sessionId
+        ? queryKeys.chatById(sessionId)
+        : agent
+          ? queryKeys.chat(agent)
+          : queryKeys.chat();
 
       // Add user message to cache optimistically
       queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => [
@@ -306,14 +313,8 @@ export const useMutateChatPrompt = () => {
           });
 
           addSnackbar({
-            label: 'Failed to send message. Tap to retry.',
+            label: 'Failed to send message. Please try again.',
             variant: 'danger',
-            hasAction: true,
-            actionLabel: 'Retry',
-            action: () => {
-              // Retry with same variables
-              useMutateChatPrompt().mutate(variables);
-            },
           });
         }
 
