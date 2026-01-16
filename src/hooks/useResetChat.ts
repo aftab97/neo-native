@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useChatStore,
@@ -24,7 +25,7 @@ export const useResetChat = () => {
   /**
    * Reset chat for homepage - clears the general ['chat'] cache
    */
-  const resetForHomepage = () => {
+  const resetForHomepage = useCallback(() => {
     // Clear the homepage chat cache
     queryClient.setQueryData(queryKeys.chat(), []);
 
@@ -34,12 +35,12 @@ export const useResetChat = () => {
     setInputValue("");
     setIsPromptPaused(false);
     setAbortController(null);
-  };
+  }, [queryClient, setCurrentSessionId, setSelectedAgent, setInputValue, setIsPromptPaused, setAbortController]);
 
   /**
    * Reset chat for agent page - clears the ['chat', agentId] cache
    */
-  const resetForAgent = (agentId: string) => {
+  const resetForAgent = useCallback((agentId: string) => {
     // Clear the agent-specific chat cache
     queryClient.setQueryData(queryKeys.chat(agentId), []);
 
@@ -49,12 +50,12 @@ export const useResetChat = () => {
     setInputValue("");
     setIsPromptPaused(false);
     setAbortController(null);
-  };
+  }, [queryClient, setCurrentSessionId, setSelectedAgent, setInputValue, setIsPromptPaused, setAbortController]);
 
   /**
    * Reset all chat caches (for "new chat" action)
    */
-  const resetAll = () => {
+  const resetAll = useCallback(() => {
     // Clear homepage cache
     queryClient.setQueryData(queryKeys.chat(), []);
 
@@ -64,7 +65,7 @@ export const useResetChat = () => {
     setInputValue("");
     setIsPromptPaused(false);
     setAbortController(null);
-  };
+  }, [queryClient, setCurrentSessionId, setSelectedAgent, setInputValue, setIsPromptPaused, setAbortController]);
 
   return {
     resetForHomepage,

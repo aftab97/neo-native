@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "./fetch";
+import EventSource from "react-native-sse";
 import { queryKeys } from "./queryClient";
-import { ENDPOINTS } from "../config/api";
+import { ENDPOINTS, API_BASE_URL } from "../config/api";
 import { ChatMessage } from "../types/chat";
 import {
   useChatStore,
@@ -32,7 +32,7 @@ export const useChatHistory = (agentId?: string) => {
   return useQuery({
     queryKey,
     queryFn: () => queryClient.getQueryData<ChatMessage[]>(queryKey) ?? [],
-    staleTime: Infinity, // Never refetch, rely on cache updates
+    staleTime: Infinity,
   });
 };
 
@@ -56,7 +56,7 @@ export const useChatBySessionId = (sessionId?: string | null) => {
 };
 
 /**
- * Send a chat prompt with streaming response
+ * Send a chat prompt with streaming response using SSE
  */
 export const useMutateChatPrompt = () => {
   const queryClient = useQueryClient();
@@ -96,7 +96,6 @@ export const useMutateChatPrompt = () => {
       setLastPrompt(question);
 
       // Determine cache key based on context
-      // For history chats, use session-based key so UI updates correctly
       const chatKey =
         isHistoryChat && sessionId
           ? queryKeys.chatById(sessionId)
@@ -124,7 +123,12 @@ export const useMutateChatPrompt = () => {
         },
       ]);
 
-      try {
+      // Accumulation variables
+      let accumulatedMessage = "";
+      let accumulatedStatus: string[] = [];
+      let accumulatedContents: any[] = [];
+
+      return new Promise((resolve, reject) => {
         const requestBody = {
           question,
           session_id: sessionId,
@@ -143,185 +147,144 @@ export const useMutateChatPrompt = () => {
           })),
         };
 
-        const response = await apiFetch(ENDPOINTS.CHAT, {
+        const url = `${API_BASE_URL}${ENDPOINTS.CHAT}`;
+
+        // Create SSE connection using react-native-sse
+        const es = new EventSource(url, {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+            "ngrok-skip-browser-warning": "true", // Bypass ngrok warning page
+          },
           body: JSON.stringify(requestBody),
-          signal: controller.signal,
+          pollingInterval: 0, // Disable polling, use true streaming
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Chat error response:", errorText);
-          throw new Error(errorText || "Chat request failed");
-        }
+        console.log("SSE: Creating connection to", url);
 
-        // Initialize variables for message accumulation
-        let accumulatedMessage = "";
-        let accumulatedStatus: string[] = [];
-        let accumulatedContents: any[] = [];
-
-        // Stream the response
-        // Note: React Native fetch may not support streaming in all cases
-        const reader = response.body?.getReader();
-
-        if (!reader) {
-          // Fallback: read as text if streaming not supported
-          const text = await response.text();
-
-          // Try to parse as SSE events
-          const events = text.split(/\r?\n\r?\n/);
-          for (const event of events) {
-            if (!event.trim()) continue;
-            const parsed = parseStreamChunk(event);
-            // Append message content (BFF sends incremental chunks)
-            if (parsed?.message) {
-              accumulatedMessage += parsed.message;
-            }
-            if (parsed?.status) {
-              for (const status of parsed.status) {
-                if (!accumulatedStatus.includes(status)) {
-                  accumulatedStatus.push(status);
-                }
-              }
-            }
-          }
-
-          // Update cache with final result
+        // Handle abort
+        controller.signal.addEventListener("abort", () => {
+          es.close();
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
             if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                message:
-                  accumulatedMessage ||
-                  "Response received but no message content found.",
-                status: undefined,
-              };
-            }
-            return updated;
-          });
-
-          return { success: true, messageIdAi };
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        // Helper to process a single chunk
-        const processChunk = (chunk: string) => {
-          if (!chunk.trim()) return;
-
-          const parsed = parseStreamChunk(chunk);
-          if (parsed) {
-            // Accumulate message content - APPEND to existing (BFF sends incremental chunks)
-            if (parsed.message) {
-              accumulatedMessage += parsed.message;
-            }
-
-            // Accumulate status messages (each event adds to status)
-            if (parsed.status && parsed.status.length > 0) {
-              for (const status of parsed.status) {
-                if (!accumulatedStatus.includes(status)) {
-                  accumulatedStatus.push(status);
-                }
-              }
-            }
-
-            // Accumulate contents
-            if (parsed.contents && parsed.contents.length > 0) {
-              accumulatedContents = [
-                ...accumulatedContents,
-                ...parsed.contents,
-              ];
-            }
-
-            // Update the AI message in cache
-            queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
-              const updated = [...old];
-              const lastIndex = updated.length - 1;
-
-              if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
-                updated[lastIndex] = {
-                  ...updated[lastIndex],
-                  message: accumulatedMessage,
-                  status: [...accumulatedStatus],
-                  contents:
-                    accumulatedContents.length > 0
-                      ? accumulatedContents
-                      : undefined,
-                  suggestedAgents:
-                    parsed.suggestedAgents ||
-                    updated[lastIndex].suggestedAgents,
-                };
-              }
-
-              return updated;
-            });
-          }
-        };
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            // Process any remaining buffer content before exiting
-            if (buffer.trim()) {
-              processChunk(buffer);
-            }
-            break;
-          }
-
-          const decodedChunk = decoder.decode(value, { stream: true });
-          buffer += decodedChunk;
-          const chunks = buffer.split(/\r?\n\r?\n/);
-          buffer = chunks.pop() || "";
-
-          for (const chunk of chunks) {
-            processChunk(chunk);
-          }
-        }
-
-        // Clear status on completion
-        queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
-          const updated = [...old];
-          const lastIndex = updated.length - 1;
-
-          if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              status: undefined,
-            };
-          }
-
-          return updated;
-        });
-
-        return { success: true, messageIdAi };
-      } catch (error: any) {
-        if (error.name === "AbortError") {
-          // User cancelled - update status
-          queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
-            const updated = [...old];
-            const lastIndex = updated.length - 1;
-
-            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
-              updated[lastIndex] = {
-                ...updated[lastIndex],
-                message:
-                  updated[lastIndex].message ||
-                  "Response generation cancelled.",
+                message: updated[lastIndex].message || "Response generation cancelled.",
                 status: ["Cancelled"],
               };
             }
-
             return updated;
           });
-        } else {
-          // Real error
-          console.error("Chat error:", error);
+          reject(new DOMException("Aborted", "AbortError"));
+        });
 
-          // Update AI message with error
+        // Helper to process SSE event
+        const processSSEEvent = (eventType: string, eventData: string) => {
+          if (!eventData) return;
+
+          try {
+            // Reconstruct the full SSE format for parseStreamChunk
+            const fullChunk = `event: ${eventType}\ndata: ${eventData}`;
+            console.log("SSE Event:", eventType, eventData.substring(0, 100));
+
+            const parsed = parseStreamChunk(fullChunk);
+
+            if (parsed) {
+              // Accumulate message content
+              if (parsed.message) {
+                accumulatedMessage += parsed.message;
+              }
+
+              // Accumulate status messages
+              if (parsed.status && parsed.status.length > 0) {
+                for (const status of parsed.status) {
+                  if (!accumulatedStatus.includes(status)) {
+                    accumulatedStatus.push(status);
+                  }
+                }
+              }
+
+              // Accumulate contents
+              if (parsed.contents && parsed.contents.length > 0) {
+                accumulatedContents = [...accumulatedContents, ...parsed.contents];
+              }
+
+              // Update the AI message in cache - this triggers React re-render
+              queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+                const updated = [...old];
+                const lastIndex = updated.length - 1;
+
+                if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    message: accumulatedMessage,
+                    status: accumulatedStatus.length > 0 ? [...accumulatedStatus] : ["Processing..."],
+                    contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
+                    suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
+                  };
+                }
+
+                return updated;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing SSE event:", e);
+          }
+        };
+
+        // Listen for specific SSE event types
+        const eventTypes = ["START", "DETECT_INTENT", "CLARIFY_INTENT", "CALL_BACKEND", "END", "ERROR"];
+        eventTypes.forEach((eventType) => {
+          (es as any).addEventListener(eventType, (event: any) => {
+            processSSEEvent(eventType, event.data || "{}");
+          });
+        });
+
+        // Also listen for generic message events (fallback)
+        es.addEventListener("message", (event: any) => {
+          if (!event.data) return;
+          console.log("SSE generic message:", event.data?.substring?.(0, 100) || event.data);
+          processSSEEvent("message", event.data);
+        });
+
+        // Handle SSE errors
+        es.addEventListener("error", (event: any) => {
+          console.error("SSE error:", event);
+          es.close();
+
+          // Only treat as error if we haven't received any message
+          if (!accumulatedMessage) {
+            queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+              const updated = [...old];
+              const lastIndex = updated.length - 1;
+              if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
+                updated[lastIndex] = {
+                  ...updated[lastIndex],
+                  message: "Sorry, something went wrong. Please try again.",
+                  status: ["Error"],
+                };
+              }
+              return updated;
+            });
+
+            addSnackbar({
+              label: "Failed to send message. Please try again.",
+              variant: "danger",
+              hasAction: false,
+            });
+
+            setIsPromptPaused(false);
+            setAbortController(null);
+            reject(new Error("SSE connection error"));
+          }
+        });
+
+        // Handle SSE close (stream complete)
+        es.addEventListener("close", () => {
+          // Clear status on completion
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
@@ -329,26 +292,29 @@ export const useMutateChatPrompt = () => {
             if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                message: "Sorry, something went wrong. Please try again.",
-                status: ["Error"],
+                message: accumulatedMessage || "Response received.",
+                status: undefined,
               };
             }
 
             return updated;
           });
 
-          addSnackbar({
-            label: "Failed to send message. Please try again.",
-            variant: "danger",
-            hasAction: false,
-          });
-        }
+          setIsPromptPaused(false);
+          setAbortController(null);
+          resolve({ success: true, messageIdAi });
+        });
 
-        throw error;
-      } finally {
-        setIsPromptPaused(false);
-        setAbortController(null);
-      }
+        // Handle 'open' event
+        es.addEventListener("open", () => {
+          console.log("SSE: Connection opened successfully");
+        });
+
+        // Debug: Log all raw events
+        (es as any).onmessage = (event: any) => {
+          console.log("SSE RAW onmessage:", JSON.stringify(event).substring(0, 200));
+        };
+      });
     },
     onSuccess: () => {
       // Invalidate chat titles to refresh sidebar
@@ -374,18 +340,26 @@ export const useCancelChatPrompt = () => {
       sessionId: string;
       chatKey: readonly string[] | readonly (string | { id: string })[];
     }) => {
-      // Abort the fetch request
+      // Abort the SSE connection
       abortController?.abort();
 
       // Call cancel endpoint
       if (sessionId && messageIdUser) {
-        await apiFetch(ENDPOINTS.CHAT_CANCEL, {
-          method: "POST",
-          body: JSON.stringify({
-            session_id: sessionId,
-            message_id_user: messageIdUser,
-          }),
-        });
+        try {
+          const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CHAT_CANCEL}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: sessionId,
+              message_id_user: messageIdUser,
+            }),
+          });
+          if (!response.ok) {
+            console.error("Cancel request failed");
+          }
+        } catch (e) {
+          console.error("Cancel request error:", e);
+        }
       }
 
       // Update cache with cancelled status

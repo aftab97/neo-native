@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
@@ -35,7 +36,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { selectedAgent } = useAgentStore();
   const { resetAll, resetForAgent } = useResetChat();
-  const { data: chatTitles = [] } = useGetChatTitles();
+  const { data: chatTitles = [], refetch, isRefetching } = useGetChatTitles();
 
   const backgroundColor = isDarkTheme ? "#000000" : "#ffffff";
   const textColor = isDarkTheme ? "#ffffff" : "#21232c";
@@ -90,6 +91,14 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={accentColor}
+            colors={[accentColor]}
+          />
+        }
       >
         {/* Recent Chats Section */}
         <View style={styles.section}>
