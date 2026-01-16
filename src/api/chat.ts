@@ -127,6 +127,7 @@ export const useMutateChatPrompt = () => {
       let accumulatedMessage = "";
       let accumulatedStatus: string[] = [];
       let accumulatedContents: any[] = [];
+      let isCompleted = false; // Guard against double-completion
 
       return new Promise((resolve, reject) => {
         const requestBody = {
@@ -235,12 +236,53 @@ export const useMutateChatPrompt = () => {
           }
         };
 
+        // Helper to complete the stream and reset state
+        const completeStream = () => {
+          if (isCompleted) return; // Prevent double-completion
+          isCompleted = true;
+          es.close();
+
+          // Clear status on completion
+          queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+            const updated = [...old];
+            const lastIndex = updated.length - 1;
+
+            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                message: accumulatedMessage || "Response received.",
+                status: undefined,
+              };
+            }
+
+            return updated;
+          });
+
+          setIsPromptPaused(false);
+          setAbortController(null);
+          resolve({ success: true, messageIdAi });
+        };
+
         // Listen for specific SSE event types
-        const eventTypes = ["START", "DETECT_INTENT", "CLARIFY_INTENT", "CALL_BACKEND", "END", "ERROR"];
+        const eventTypes = ["START", "DETECT_INTENT", "CLARIFY_INTENT", "CALL_BACKEND"];
         eventTypes.forEach((eventType) => {
           (es as any).addEventListener(eventType, (event: any) => {
             processSSEEvent(eventType, event.data || "{}");
           });
+        });
+
+        // Handle END event specially - this signals stream completion
+        (es as any).addEventListener("END", (event: any) => {
+          console.log("SSE: END event received, completing stream");
+          processSSEEvent("END", event.data || "{}");
+          completeStream();
+        });
+
+        // Handle ERROR event specially
+        (es as any).addEventListener("ERROR", (event: any) => {
+          console.error("SSE: ERROR event from server:", event.data);
+          processSSEEvent("ERROR", event.data || "{}");
+          completeStream();
         });
 
         // Also listen for generic message events (fallback)
@@ -282,27 +324,10 @@ export const useMutateChatPrompt = () => {
           }
         });
 
-        // Handle SSE close (stream complete)
+        // Handle SSE close (stream complete) - fallback if END event doesn't fire
         es.addEventListener("close", () => {
-          // Clear status on completion
-          queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
-            const updated = [...old];
-            const lastIndex = updated.length - 1;
-
-            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
-              updated[lastIndex] = {
-                ...updated[lastIndex],
-                message: accumulatedMessage || "Response received.",
-                status: undefined,
-              };
-            }
-
-            return updated;
-          });
-
-          setIsPromptPaused(false);
-          setAbortController(null);
-          resolve({ success: true, messageIdAi });
+          console.log("SSE: close event received");
+          completeStream();
         });
 
         // Handle 'open' event
