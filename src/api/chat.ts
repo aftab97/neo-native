@@ -1,15 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from './fetch';
-import { queryKeys } from './queryClient';
-import { ENDPOINTS } from '../config/api';
-import { ChatMessage } from '../types/chat';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "./fetch";
+import { queryKeys } from "./queryClient";
+import { ENDPOINTS } from "../config/api";
+import { ChatMessage } from "../types/chat";
 import {
   useChatStore,
   useAgentStore,
   useRequestStore,
   usePopupStore,
-} from '../store';
-import { parseStreamChunk, createMessageId } from '../utils/parseStream';
+} from "../store";
+import { parseStreamChunk, createMessageId } from "../utils/parseStream";
 
 interface ChatPromptVariables {
   question: string;
@@ -43,7 +43,7 @@ export const useChatBySessionId = (sessionId?: string | null) => {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: sessionId ? queryKeys.chatById(sessionId) : ['chat', 'none'],
+    queryKey: sessionId ? queryKeys.chatById(sessionId) : ["chat", "none"],
     queryFn: () =>
       sessionId
         ? queryClient.getQueryData<ChatMessage[]>(
@@ -78,8 +78,8 @@ export const useMutateChatPrompt = () => {
       } = variables;
 
       // Generate unique message IDs
-      const messageIdUser = createMessageId('user');
-      const messageIdAi = createMessageId('ai');
+      const messageIdUser = createMessageId("user");
+      const messageIdAi = createMessageId("ai");
 
       // Create abort controller for cancellation
       const controller = new AbortController();
@@ -97,9 +97,10 @@ export const useMutateChatPrompt = () => {
 
       // Determine cache key based on context
       // For history chats, use session-based key so UI updates correctly
-      const chatKey = isHistoryChat && sessionId
-        ? queryKeys.chatById(sessionId)
-        : agent
+      const chatKey =
+        isHistoryChat && sessionId
+          ? queryKeys.chatById(sessionId)
+          : agent
           ? queryKeys.chat(agent)
           : queryKeys.chat();
 
@@ -107,18 +108,18 @@ export const useMutateChatPrompt = () => {
       queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => [
         ...old,
         {
-          role: 'user',
+          role: "user",
           message: question,
           message_id: messageIdUser,
-          session_id: sessionId || '',
+          session_id: sessionId || "",
           order: old.length,
         },
         {
-          role: 'ai',
-          message: '',
+          role: "ai",
+          message: "",
           message_id: messageIdAi,
-          session_id: sessionId || '',
-          status: ['Processing...'],
+          session_id: sessionId || "",
+          status: ["Processing..."],
           order: old.length + 1,
         },
       ]);
@@ -133,8 +134,8 @@ export const useMutateChatPrompt = () => {
           selected_backend: agent || undefined,
           is_prompt_from_agent_page: isPromptFromAgentPage,
           gcs_uris: {
-            'is_unstructured=True': [],
-            'is_unstructured=False': [],
+            "is_unstructured=True": [],
+            "is_unstructured=False": [],
           },
           files: files.map((f) => ({
             name: f.name,
@@ -143,19 +144,19 @@ export const useMutateChatPrompt = () => {
         };
 
         const response = await apiFetch(ENDPOINTS.CHAT, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify(requestBody),
           signal: controller.signal,
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Chat error response:', errorText);
-          throw new Error(errorText || 'Chat request failed');
+          console.error("Chat error response:", errorText);
+          throw new Error(errorText || "Chat request failed");
         }
 
         // Initialize variables for message accumulation
-        let accumulatedMessage = '';
+        let accumulatedMessage = "";
         let accumulatedStatus: string[] = [];
         let accumulatedContents: any[] = [];
 
@@ -189,10 +190,12 @@ export const useMutateChatPrompt = () => {
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
-            if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                message: accumulatedMessage || 'Response received but no message content found.',
+                message:
+                  accumulatedMessage ||
+                  "Response received but no message content found.",
                 status: undefined,
               };
             }
@@ -203,7 +206,7 @@ export const useMutateChatPrompt = () => {
         }
 
         const decoder = new TextDecoder();
-        let buffer = '';
+        let buffer = "";
 
         // Helper to process a single chunk
         const processChunk = (chunk: string) => {
@@ -227,7 +230,10 @@ export const useMutateChatPrompt = () => {
 
             // Accumulate contents
             if (parsed.contents && parsed.contents.length > 0) {
-              accumulatedContents = [...accumulatedContents, ...parsed.contents];
+              accumulatedContents = [
+                ...accumulatedContents,
+                ...parsed.contents,
+              ];
             }
 
             // Update the AI message in cache
@@ -235,13 +241,18 @@ export const useMutateChatPrompt = () => {
               const updated = [...old];
               const lastIndex = updated.length - 1;
 
-              if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+              if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
                 updated[lastIndex] = {
                   ...updated[lastIndex],
                   message: accumulatedMessage,
                   status: [...accumulatedStatus],
-                  contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
-                  suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
+                  contents:
+                    accumulatedContents.length > 0
+                      ? accumulatedContents
+                      : undefined,
+                  suggestedAgents:
+                    parsed.suggestedAgents ||
+                    updated[lastIndex].suggestedAgents,
                 };
               }
 
@@ -264,7 +275,7 @@ export const useMutateChatPrompt = () => {
           const decodedChunk = decoder.decode(value, { stream: true });
           buffer += decodedChunk;
           const chunks = buffer.split(/\r?\n\r?\n/);
-          buffer = chunks.pop() || '';
+          buffer = chunks.pop() || "";
 
           for (const chunk of chunks) {
             processChunk(chunk);
@@ -276,7 +287,7 @@ export const useMutateChatPrompt = () => {
           const updated = [...old];
           const lastIndex = updated.length - 1;
 
-          if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+          if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
             updated[lastIndex] = {
               ...updated[lastIndex],
               status: undefined,
@@ -288,18 +299,19 @@ export const useMutateChatPrompt = () => {
 
         return { success: true, messageIdAi };
       } catch (error: any) {
-        if (error.name === 'AbortError') {
+        if (error.name === "AbortError") {
           // User cancelled - update status
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
 
-            if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
                 message:
-                  updated[lastIndex].message || 'Response generation cancelled.',
-                status: ['Cancelled'],
+                  updated[lastIndex].message ||
+                  "Response generation cancelled.",
+                status: ["Cancelled"],
               };
             }
 
@@ -307,18 +319,18 @@ export const useMutateChatPrompt = () => {
           });
         } else {
           // Real error
-          console.error('Chat error:', error);
+          console.error("Chat error:", error);
 
           // Update AI message with error
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
 
-            if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+            if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                message: 'Sorry, something went wrong. Please try again.',
-                status: ['Error'],
+                message: "Sorry, something went wrong. Please try again.",
+                status: ["Error"],
               };
             }
 
@@ -326,8 +338,9 @@ export const useMutateChatPrompt = () => {
           });
 
           addSnackbar({
-            label: 'Failed to send message. Please try again.',
-            variant: 'danger',
+            label: "Failed to send message. Please try again.",
+            variant: "danger",
+            hasAction: false,
           });
         }
 
@@ -367,7 +380,7 @@ export const useCancelChatPrompt = () => {
       // Call cancel endpoint
       if (sessionId && messageIdUser) {
         await apiFetch(ENDPOINTS.CHAT_CANCEL, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({
             session_id: sessionId,
             message_id_user: messageIdUser,
@@ -382,10 +395,10 @@ export const useCancelChatPrompt = () => {
           const updated = [...old];
           const lastIndex = updated.length - 1;
 
-          if (lastIndex >= 0 && updated[lastIndex].role === 'ai') {
+          if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
             updated[lastIndex] = {
               ...updated[lastIndex],
-              status: ['Generating Response Cancelled'],
+              status: ["Generating Response Cancelled"],
             };
           }
 
@@ -398,8 +411,8 @@ export const useCancelChatPrompt = () => {
     onSuccess: () => {
       setIsPromptPaused(false);
       addToast({
-        variant: 'default',
-        label: 'Response generation cancelled.',
+        variant: "default",
+        label: "Response generation cancelled.",
       });
     },
   });

@@ -1,17 +1,18 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { useNavigation } from '@react-navigation/native';
-import { useLayoutStore, useAgentStore, useChatStore } from '../../store';
-import { useGetChatTitles } from '../../api';
-import { AGENTS } from '../../config/agents';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { useNavigation } from "@react-navigation/native";
+import { useLayoutStore, useAgentStore } from "../../store";
+import { useResetChat } from "../../hooks";
+import { useGetChatTitles } from "../../api";
+import { AGENTS } from "../../config/agents";
 
 // Simple icon placeholders
 const PlusIcon = ({ color }: { color: string }) => (
@@ -32,37 +33,41 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
-  const { selectedAgent, setSelectedAgent } = useAgentStore();
-  const { reset: resetChat } = useChatStore();
+  const { selectedAgent } = useAgentStore();
+  const { resetAll, resetForAgent } = useResetChat();
   const { data: chatTitles = [] } = useGetChatTitles();
 
-  const backgroundColor = isDarkTheme ? '#000000' : '#ffffff';
-  const textColor = isDarkTheme ? '#ffffff' : '#21232c';
-  const secondaryTextColor = isDarkTheme ? '#9ea6ae' : '#6e7a85';
-  const borderColor = isDarkTheme ? '#3a424a' : '#e0e3e6';
-  const hoverBg = isDarkTheme ? '#21232c' : '#f4f5f6';
-  const accentColor = '#0158ab';
+  const backgroundColor = isDarkTheme ? "#000000" : "#ffffff";
+  const textColor = isDarkTheme ? "#ffffff" : "#21232c";
+  const secondaryTextColor = isDarkTheme ? "#9ea6ae" : "#6e7a85";
+  const borderColor = isDarkTheme ? "#3a424a" : "#e0e3e6";
+  const hoverBg = isDarkTheme ? "#21232c" : "#f4f5f6";
+  const accentColor = "#0158ab";
 
   const handleNewChat = () => {
-    setSelectedAgent(null);
-    resetChat();
+    // Reset chat cache and navigate to homepage
+    resetAll();
     drawerNavigation.closeDrawer();
-    navigation.navigate('Home');
+    navigation.navigate("Home");
   };
 
   const handleChatPress = (sessionId: string) => {
+    // Don't reset - load the existing chat session
     drawerNavigation.closeDrawer();
-    navigation.navigate('Chat', { sessionId });
+    navigation.navigate("Chat", { sessionId });
   };
 
   const handleAgentPress = (agentId: string) => {
-    setSelectedAgent(agentId);
+    // Reset the agent's chat cache (fresh start)
+    resetForAgent(agentId);
     drawerNavigation.closeDrawer();
-    navigation.navigate('Agent', { agentId });
+    navigation.navigate("Agent", { agentId });
   };
 
   return (
-    <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
+    <View
+      style={[styles.container, { backgroundColor, paddingTop: insets.top }]}
+    >
       {/* Logo / Brand */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <Text style={[styles.logo, { color: textColor }]}>Neo</Text>
@@ -82,7 +87,10 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         <Text style={styles.newChatText}>New Chat</Text>
       </TouchableOpacity>
 
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Recent Chats Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
@@ -96,7 +104,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
             chatTitles.slice(0, 10).map((chat) => (
               <TouchableOpacity
                 key={chat.session_id}
-                style={[styles.listItem, { backgroundColor: 'transparent' }]}
+                style={[styles.listItem, { backgroundColor: "transparent" }]}
                 onPress={() => handleChatPress(chat.session_id)}
                 accessibilityLabel={`Open chat: ${chat.title}`}
                 accessibilityRole="button"
@@ -106,7 +114,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
                   style={[styles.listItemText, { color: textColor }]}
                   numberOfLines={1}
                 >
-                  {chat.title || 'Untitled Chat'}
+                  {chat.title || "Untitled Chat"}
                 </Text>
               </TouchableOpacity>
             ))
@@ -125,7 +133,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
                 styles.listItem,
                 {
                   backgroundColor:
-                    selectedAgent === agent.id ? hoverBg : 'transparent',
+                    selectedAgent === agent.id ? hoverBg : "transparent",
                 },
               ]}
               onPress={() => handleAgentPress(agent.id)}
@@ -164,25 +172,25 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   subtitle: {
     fontSize: 12,
     marginTop: 2,
   },
   newChatButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     margin: 16,
     padding: 12,
     borderRadius: 12,
     gap: 8,
   },
   newChatText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   scrollContainer: {
     flex: 1,
@@ -193,14 +201,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    textTransform: "uppercase",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 8,
     marginBottom: 4,
@@ -212,13 +220,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     paddingVertical: 8,
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
     fontSize: 12,

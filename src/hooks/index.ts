@@ -1,1 +1,2 @@
-export { useTheme } from './useTheme';
+export { useTheme } from "./useTheme";
+export { useResetChat } from "./useResetChat";

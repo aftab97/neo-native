@@ -1,20 +1,27 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useLayoutStore, useAgentStore } from '../../store';
-import { AGENTS } from '../../config/agents';
-import { AgentMetadata } from '../../types/agent';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useLayoutStore } from "../../store";
+import { useResetChat } from "../../hooks";
+import { AGENTS } from "../../config/agents";
+import { AgentMetadata } from "../../types/agent";
 
 // Icon mapping (emoji placeholders - can be replaced with SVG icons)
 const iconMap: Record<string, string> = {
-  brain: '🧠',
-  users: '👥',
-  scale: '⚖️',
-  'dollar-sign': '💰',
-  'clipboard-check': '📋',
-  'file-text': '📄',
-  'bar-chart-2': '📊',
-  tool: '🔧',
+  brain: "🧠",
+  users: "👥",
+  scale: "⚖️",
+  "dollar-sign": "💰",
+  "clipboard-check": "📋",
+  "file-text": "📄",
+  "bar-chart-2": "📊",
+  tool: "🔧",
 };
 
 interface AgentCardItemProps {
@@ -28,9 +35,9 @@ const AgentCardItem: React.FC<AgentCardItemProps> = ({
   onPress,
   isDarkTheme,
 }) => {
-  const backgroundColor = isDarkTheme ? '#21232c' : '#ffffff';
-  const textColor = isDarkTheme ? '#ffffff' : '#21232c';
-  const secondaryTextColor = isDarkTheme ? '#9ea6ae' : '#6e7a85';
+  const backgroundColor = isDarkTheme ? "#21232c" : "#ffffff";
+  const textColor = isDarkTheme ? "#ffffff" : "#21232c";
+  const secondaryTextColor = isDarkTheme ? "#9ea6ae" : "#6e7a85";
 
   return (
     <TouchableOpacity
@@ -40,7 +47,7 @@ const AgentCardItem: React.FC<AgentCardItemProps> = ({
       accessibilityLabel={`Open ${agent.label} agent`}
       accessibilityRole="button"
     >
-      <Text style={styles.icon}>{iconMap[agent.icon] || '🤖'}</Text>
+      <Text style={styles.icon}>{iconMap[agent.icon] || "🤖"}</Text>
       <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
         {agent.label}
       </Text>
@@ -57,11 +64,12 @@ const AgentCardItem: React.FC<AgentCardItemProps> = ({
 export const AgentCards: React.FC = () => {
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
-  const { setSelectedAgent } = useAgentStore();
+  const { resetForAgent } = useResetChat();
 
   const handleAgentPress = (agent: AgentMetadata) => {
-    setSelectedAgent(agent.id);
-    navigation.navigate('Agent', { agentId: agent.id });
+    // Reset the agent's chat cache before navigating (fresh start)
+    resetForAgent(agent.id);
+    navigation.navigate("Agent", { agentId: agent.id });
   };
 
   const renderItem = ({ item }: { item: AgentMetadata }) => (
@@ -77,7 +85,7 @@ export const AgentCards: React.FC = () => {
       <Text
         style={[
           styles.sectionTitle,
-          { color: isDarkTheme ? '#9ea6ae' : '#6e7a85' },
+          { color: isDarkTheme ? "#9ea6ae" : "#6e7a85" },
         ]}
       >
         Agents
@@ -101,8 +109,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
   },
@@ -124,7 +132,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   description: {
