@@ -16,3 +16,6 @@ export { ChevronLeftIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';
+
+// Logo
+export { NeoLogo } from './NeoLogo';

@@ -14,7 +14,7 @@ import { useLayoutStore, useAgentStore } from "../../store";
 import { useResetChat } from "../../hooks";
 import { useGetChatTitles } from "../../api";
 import { AGENTS } from "../../config/agents";
-import { PlusIcon, ChatIcon, AgentIcon } from "../icons";
+import { PlusIcon, ChatIcon, AgentIcon, NeoLogo } from "../icons";
 import { colors } from "../../theme/colors";
 
 export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
@@ -27,12 +27,16 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const { resetAll, resetForAgent } = useResetChat();
   const { data: chatTitles = [], refetch, isRefetching } = useGetChatTitles();
 
-  const backgroundColor = isDarkTheme ? colors.gray['1000'] : colors.gray['000'];
-  const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
-  const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
-  const borderColor = isDarkTheme ? colors.gray['800'] : colors.gray['200'];
-  const hoverBg = isDarkTheme ? colors.gray['900'] : colors.gray['050'];
-  const accentColor = colors.blue['700'];
+  const backgroundColor = isDarkTheme
+    ? colors.gray["1000"]
+    : colors.gray["000"];
+  const textColor = isDarkTheme ? colors.gray["000"] : colors.gray["900"];
+  const secondaryTextColor = isDarkTheme
+    ? colors.gray["400"]
+    : colors.gray["500"];
+  const borderColor = isDarkTheme ? colors.gray["800"] : colors.gray["200"];
+  const hoverBg = isDarkTheme ? colors.gray["900"] : colors.gray["050"];
+  const accentColor = colors.blue["700"];
 
   const handleNewChat = () => {
     // Reset chat cache and navigate to homepage
@@ -60,9 +64,9 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
     >
       {/* Logo / Brand */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Text style={[styles.logo, { color: textColor }]}>Neo</Text>
+        <NeoLogo width={70} height={20} color={textColor} />
         <Text style={[styles.subtitle, { color: secondaryTextColor }]}>
-          Intelligence Platform
+          Capgemini's Intelligence Platform
         </Text>
       </View>
 
@@ -167,10 +171,6 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     borderBottomWidth: 1,
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: "700",
   },
   subtitle: {
     fontSize: 12,
