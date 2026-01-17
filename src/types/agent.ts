@@ -3,12 +3,26 @@ export interface AgentCardConfig {
   items?: { description: string }[];
 }
 
+/**
+ * Agent icon types matching the web app icons
+ * - rfp-proposal: Knowledge, Legal, Finance, RFP, Unleash (purple sparkle)
+ * - analyst: Sales Analyst, Data (bar chart with search)
+ * - internal-audit: Audit (blue grid)
+ * - hand-heart: HR/Manager Edge (hand holding heart)
+ */
+export type AgentIconType =
+  | 'rfp-proposal'
+  | 'analyst'
+  | 'internal-audit'
+  | 'hand-heart';
+
 export interface AgentMetadata {
   id: string;
   name: string;
   label: string;
   description: string;
-  icon: string;
+  /** Icon type matching web app icons */
+  iconType: AgentIconType;
   cardData?: readonly AgentCardConfig[];
 }
 

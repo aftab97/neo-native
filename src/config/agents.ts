@@ -1,13 +1,20 @@
 import { AgentMetadata, AGENT_NAMES } from '../types/agent';
 
-// Agent metadata matching the web app
+/**
+ * Agent metadata matching the web app (neo3-ui)
+ * Icons map to the same SVG icons used in the web app:
+ * - rfp-proposal: Knowledge, Legal, Finance, RFP, Unleash
+ * - analyst: Sales Analyst, Data (aionbi)
+ * - internal-audit: Audit
+ * - hand-heart: HR (Manager Edge)
+ */
 export const AGENTS: AgentMetadata[] = [
   {
     id: AGENT_NAMES.Knowledge,
     name: 'Knowledge',
     label: 'Neo Assistant',
     description: 'General purpose assistant for everyday tasks and questions',
-    icon: 'brain',
+    iconType: 'rfp-proposal',
     cardData: [
       {
         title: 'General Questions',
@@ -30,7 +37,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'HR',
     label: 'Manager Edge Assistant',
     description: 'HR-related queries, leave management, and employee information',
-    icon: 'users',
+    iconType: 'hand-heart',
     cardData: [
       {
         title: 'Leave Management',
@@ -53,7 +60,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'Legal',
     label: 'Contracts Assistant',
     description: 'Contract review, legal questions, and compliance guidance',
-    icon: 'scale',
+    iconType: 'rfp-proposal',
     cardData: [
       {
         title: 'Contract Review',
@@ -76,7 +83,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'Finance',
     label: 'Finance Assistant',
     description: 'Financial queries, expense reports, and budget information',
-    icon: 'dollar-sign',
+    iconType: 'rfp-proposal',
     cardData: [
       {
         title: 'Expense Management',
@@ -99,7 +106,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'Audit',
     label: 'Internal Audit Assistant',
     description: 'Audit procedures, compliance checks, and risk assessment',
-    icon: 'clipboard-check',
+    iconType: 'internal-audit',
     cardData: [
       {
         title: 'Audit Support',
@@ -115,7 +122,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'RFP',
     label: 'Proposal Assistant',
     description: 'RFP responses, proposal creation, and sales support',
-    icon: 'file-text',
+    iconType: 'rfp-proposal',
     cardData: [
       {
         title: 'Proposal Creation',
@@ -131,7 +138,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'Data',
     label: 'Sales Analyst',
     description: 'Data analysis, reporting, and business intelligence',
-    icon: 'bar-chart-2',
+    iconType: 'analyst',
     cardData: [
       {
         title: 'Data Analysis',
@@ -147,7 +154,7 @@ export const AGENTS: AgentMetadata[] = [
     name: 'Utility',
     label: 'Utility Assistant',
     description: 'General utilities and tools',
-    icon: 'tool',
+    iconType: 'rfp-proposal',
   },
 ];
 

@@ -2,16 +2,25 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLayoutStore } from '../../store';
 import { ChatMessage } from '../../types/chat';
+import { colors } from '../../theme/colors';
 
 interface UserBlockProps {
   message: ChatMessage;
 }
 
+/**
+ * User message bubble - matches web app styling
+ * - Right-aligned
+ * - Background: surface-300 (gray-100 light / gray-800 dark)
+ * - Border radius: 16px (1rem)
+ * - Max width: 80%
+ */
 export const UserBlock: React.FC<UserBlockProps> = ({ message }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
-  const backgroundColor = isDarkTheme ? '#3a424a' : '#e0e3e6';
-  const textColor = isDarkTheme ? '#ffffff' : '#21232c';
+  // Match web: bg-surface-300 which is gray-100 in light, gray-800 in dark
+  const backgroundColor = isDarkTheme ? colors.gray['800'] : colors.gray['100'];
+  const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
 
   return (
     <View style={styles.container}>
@@ -30,13 +39,12 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '80%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 16,
-    borderBottomRightRadius: 4,
   },
   text: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });

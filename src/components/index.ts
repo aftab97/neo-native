@@ -12,3 +12,6 @@ export { Chat, ChatInput, UserBlock, AIBlock } from './chat';
 
 // Agents
 export { AgentCard, AgentStartScreen } from './agents';
+
+// Icons
+export * from './icons';

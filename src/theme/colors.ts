@@ -1,67 +1,81 @@
-// Color tokens matching the web app's CSS variables
-// These can be used programmatically when NativeWind classes aren't sufficient
+// Color tokens matching the web app's CSS variables exactly
+// Source: neo3-ui/src/ui/styles/variables/colors.css
 
 export const colors = {
-  // Gray scale
+  // Gray scale (exact match from web)
   gray: {
     '000': '#ffffff',
     '012': '#fbfcfd',
     '025': '#f9fafb',
-    '050': '#f4f5f6',
-    '100': '#eceef0',
-    '200': '#e0e3e6',
-    '300': '#c7ccd1',
-    '400': '#9ea6ae',
-    '500': '#6e7a85',
-    '600': '#5d6872',
-    '700': '#4b555e',
-    '800': '#3a424a',
+    '050': '#f5f6f9',
+    '100': '#f0f2f6',
+    '200': '#e2e5ee',
+    '300': '#cfd4e2',
+    '400': '#929aaf',
+    '500': '#646b82',
+    '600': '#4c5366',
+    '700': '#363b49',
+    '800': '#2b2f3b',
     '900': '#21232c',
-    '950': '#17191f',
+    '925': '#191a21',
+    '950': '#111216',
     '1000': '#000000',
   },
 
-  // Blue accent
+  // Blue (primary brand)
   blue: {
-    '100': '#e6f2ff',
-    '200': '#b3d9ff',
-    '300': '#80c0ff',
-    '400': '#4da6ff',
-    '500': '#1a8cff',
-    '600': '#0073e6',
-    '700': '#0158ab',
-    '800': '#004080',
-    '900': '#002b57',
+    '100': '#ebf2fa',
+    '200': '#d4e5f7',
+    '300': '#a8ccf0',
+    '400': '#7db2e8',
+    '500': '#5299e0',
+    '600': '#1773cf',
+    '700': '#0a66c2',
+    '800': '#044d95',
   },
 
   // Red (danger/error)
   red: {
-    '100': '#fee2e2',
-    '400': '#f87171',
-    '500': '#ef4444',
-    '700': '#b91c1c',
-  },
-
-  // Green (success)
-  green: {
-    '100': '#dcfce7',
-    '400': '#4ade80',
-    '500': '#22c55e',
-    '700': '#15803d',
+    '100': '#ffe5ea',
+    '200': '#ffccd4',
+    '300': '#ff99aa',
+    '400': '#ff6680',
+    '500': '#eb4763',
+    '600': '#e61c3d',
+    '700': '#cc0022',
+    '800': '#99001a',
   },
 
   // Yellow (warning)
   yellow: {
-    '100': '#fef9c3',
-    '400': '#facc15',
-    '500': '#eab308',
-    '700': '#a16207',
+    '100': '#fff7e5',
+    '200': '#ffeecc',
+    '300': '#ffdd99',
+    '400': '#ffcc66',
+    '500': '#e6a800',
+    '600': '#cc9600',
+    '700': '#997000',
+    '800': '#664b00',
   },
 
-  // Purple
+  // Green (success)
+  green: {
+    '100': '#e5fff0',
+    '200': '#ccffe0',
+    '300': '#99ffc2',
+    '400': '#66ffa3',
+    '500': '#00cc5c',
+    '600': '#00b352',
+    '700': '#008f41',
+    '800': '#006b31',
+  },
+
+  // Purple (agent icons)
   purple: {
-    '500': '#8b5cf6',
-    '700': '#6d28d9',
+    '100': '#f4ebff',
+    '500': '#7e1fad',
+    '600': '#ad5cd6',
+    '700': '#610f8a',
   },
 
   // Teal
@@ -147,6 +161,24 @@ export const semantic = {
         text: colors.gray['000'],
         hover: colors.red['500'],
       },
+    },
+  },
+} as const;
+
+// Code syntax highlighting colors (matching web)
+export const codeColors = {
+  light: {
+    background: '#1e1e1e',
+    inlineCode: {
+      bg: colors.gray['100'],
+      text: colors.gray['900'],
+    },
+  },
+  dark: {
+    background: '#1e1e1e',
+    inlineCode: {
+      bg: colors.gray['800'],
+      text: colors.gray['100'],
     },
   },
 } as const;

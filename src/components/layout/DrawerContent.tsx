@@ -14,19 +14,8 @@ import { useLayoutStore, useAgentStore } from "../../store";
 import { useResetChat } from "../../hooks";
 import { useGetChatTitles } from "../../api";
 import { AGENTS } from "../../config/agents";
-
-// Simple icon placeholders
-const PlusIcon = ({ color }: { color: string }) => (
-  <Text style={{ fontSize: 20, color }}>+</Text>
-);
-
-const ChatIcon = ({ color }: { color: string }) => (
-  <Text style={{ fontSize: 16, color }}>💬</Text>
-);
-
-const AgentIcon = ({ color }: { color: string }) => (
-  <Text style={{ fontSize: 16, color }}>🤖</Text>
-);
+import { PlusIcon, ChatIcon, AgentIcon } from "../icons";
+import { colors } from "../../theme/colors";
 
 export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   navigation: drawerNavigation,
@@ -38,12 +27,12 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const { resetAll, resetForAgent } = useResetChat();
   const { data: chatTitles = [], refetch, isRefetching } = useGetChatTitles();
 
-  const backgroundColor = isDarkTheme ? "#000000" : "#ffffff";
-  const textColor = isDarkTheme ? "#ffffff" : "#21232c";
-  const secondaryTextColor = isDarkTheme ? "#9ea6ae" : "#6e7a85";
-  const borderColor = isDarkTheme ? "#3a424a" : "#e0e3e6";
-  const hoverBg = isDarkTheme ? "#21232c" : "#f4f5f6";
-  const accentColor = "#0158ab";
+  const backgroundColor = isDarkTheme ? colors.gray['1000'] : colors.gray['000'];
+  const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
+  const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
+  const borderColor = isDarkTheme ? colors.gray['800'] : colors.gray['200'];
+  const hoverBg = isDarkTheme ? colors.gray['900'] : colors.gray['050'];
+  const accentColor = colors.blue['700'];
 
   const handleNewChat = () => {
     // Reset chat cache and navigate to homepage
@@ -84,7 +73,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         accessibilityLabel="Start new chat"
         accessibilityRole="button"
       >
-        <PlusIcon color="#ffffff" />
+        <PlusIcon size={20} color="#ffffff" />
         <Text style={styles.newChatText}>New Chat</Text>
       </TouchableOpacity>
 
@@ -118,7 +107,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
                 accessibilityLabel={`Open chat: ${chat.title}`}
                 accessibilityRole="button"
               >
-                <ChatIcon color={secondaryTextColor} />
+                <ChatIcon size={18} color={secondaryTextColor} />
                 <Text
                   style={[styles.listItemText, { color: textColor }]}
                   numberOfLines={1}
@@ -149,7 +138,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
               accessibilityLabel={`Open ${agent.label} agent`}
               accessibilityRole="button"
             >
-              <AgentIcon color={secondaryTextColor} />
+              <AgentIcon type={agent.iconType} size={24} />
               <Text
                 style={[styles.listItemText, { color: textColor }]}
                 numberOfLines={1}

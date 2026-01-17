@@ -1,34 +1,28 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { useLayoutStore, useChatStore } from '../../store';
+import { useLayoutStore } from '../../store';
 import { AgentMetadata } from '../../types/agent';
 import { AgentCard } from './AgentCard';
-
-// Icon mapping
-const iconMap: Record<string, string> = {
-  brain: '🧠',
-  users: '👥',
-  scale: '⚖️',
-  'dollar-sign': '💰',
-  'clipboard-check': '📋',
-  'file-text': '📄',
-  'bar-chart-2': '📊',
-  tool: '🔧',
-};
+import { AgentIcon } from '../icons';
+import { colors } from '../../theme/colors';
 
 interface AgentStartScreenProps {
   agent: AgentMetadata;
   onSuggestionPress: (prompt: string) => void;
 }
 
+/**
+ * Agent start screen - matches web app styling
+ * Shows agent icon, name, description and suggestion cards
+ */
 export const AgentStartScreen: React.FC<AgentStartScreenProps> = ({
   agent,
   onSuggestionPress,
 }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
-  const textColor = isDarkTheme ? '#ffffff' : '#21232c';
-  const secondaryTextColor = isDarkTheme ? '#9ea6ae' : '#6e7a85';
+  const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
+  const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
 
   const handleCardPress = (title: string) => {
     onSuggestionPress(title);
@@ -42,7 +36,9 @@ export const AgentStartScreen: React.FC<AgentStartScreenProps> = ({
     >
       {/* Agent Header */}
       <View style={styles.header}>
-        <Text style={styles.icon}>{iconMap[agent.icon] || '🤖'}</Text>
+        <View style={styles.iconContainer}>
+          <AgentIcon type={agent.iconType} size={80} />
+        </View>
         <Text style={[styles.title, { color: textColor }]}>{agent.label}</Text>
         <Text style={[styles.description, { color: secondaryTextColor }]}>
           {agent.description}
@@ -80,8 +76,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 32,
   },
-  icon: {
-    fontSize: 64,
+  iconContainer: {
     marginBottom: 16,
   },
   title: {
@@ -99,7 +94,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

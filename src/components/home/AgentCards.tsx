@@ -11,18 +11,8 @@ import { useLayoutStore } from "../../store";
 import { useResetChat } from "../../hooks";
 import { AGENTS } from "../../config/agents";
 import { AgentMetadata } from "../../types/agent";
-
-// Icon mapping (emoji placeholders - can be replaced with SVG icons)
-const iconMap: Record<string, string> = {
-  brain: "🧠",
-  users: "👥",
-  scale: "⚖️",
-  "dollar-sign": "💰",
-  "clipboard-check": "📋",
-  "file-text": "📄",
-  "bar-chart-2": "📊",
-  tool: "🔧",
-};
+import { AgentIcon } from "../icons";
+import { colors } from "../../theme/colors";
 
 interface AgentCardItemProps {
   agent: AgentMetadata;
@@ -35,19 +25,22 @@ const AgentCardItem: React.FC<AgentCardItemProps> = ({
   onPress,
   isDarkTheme,
 }) => {
-  const backgroundColor = isDarkTheme ? "#21232c" : "#ffffff";
-  const textColor = isDarkTheme ? "#ffffff" : "#21232c";
-  const secondaryTextColor = isDarkTheme ? "#9ea6ae" : "#6e7a85";
+  const backgroundColor = isDarkTheme ? colors.gray['900'] : colors.gray['000'];
+  const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
+  const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
+  const borderColor = isDarkTheme ? colors.gray['800'] : colors.gray['200'];
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor }]}
+      style={[styles.card, { backgroundColor, borderColor }]}
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityLabel={`Open ${agent.label} agent`}
       accessibilityRole="button"
     >
-      <Text style={styles.icon}>{iconMap[agent.icon] || "🤖"}</Text>
+      <View style={styles.iconContainer}>
+        <AgentIcon type={agent.iconType} size={48} />
+      </View>
       <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
         {agent.label}
       </Text>
@@ -80,14 +73,11 @@ export const AgentCards: React.FC = () => {
     />
   );
 
+  const sectionTitleColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
+
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: isDarkTheme ? "#9ea6ae" : "#6e7a85" },
-        ]}
-      >
+      <Text style={[styles.sectionTitle, { color: sectionTitleColor }]}>
         Agents
       </Text>
       <FlatList
@@ -108,7 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -123,12 +113,12 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     padding: 16,
-    borderRadius: 16,
-    minHeight: 120,
+    borderRadius: 24,
+    borderWidth: 1,
+    minHeight: 160,
   },
-  icon: {
-    fontSize: 28,
-    marginBottom: 8,
+  iconContainer: {
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
@@ -137,6 +127,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 18,
   },
 });
