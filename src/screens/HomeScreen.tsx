@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { useLayoutStore, useChatStore } from "../store";
+import { useLayoutStore, useChatStore, useSessionStore } from "../store";
 import { useMutateChatPrompt, useGetUser } from "../api";
 import {
   WelcomeSection,
@@ -23,6 +23,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { setInputValue } = useChatStore();
+  const { setCurrentSessionId } = useSessionStore();
   const { data: user } = useGetUser();
   const chatMutation = useMutateChatPrompt();
   const { resetForHomepage } = useResetChat();
@@ -38,6 +39,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
 
   const handleSend = (message: string) => {
     const sessionId = createSessionId();
+
+    // Store session ID so ChatScreen can use it for subsequent messages
+    // (e.g., adaptive card button clicks)
+    setCurrentSessionId(sessionId);
 
     // Navigate IMMEDIATELY to ChatScreen to see real-time streaming
     // Don't pass sessionId - homepage uses ['chat'] cache key, not session-based

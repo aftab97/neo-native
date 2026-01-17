@@ -7,9 +7,10 @@ import { AIBlock } from './AIBlock';
 
 interface ChatProps {
   messages: ChatMessage[];
+  onCardSubmit?: (data: any) => void;
 }
 
-export const Chat: React.FC<ChatProps> = ({ messages }) => {
+export const Chat: React.FC<ChatProps> = ({ messages, onCardSubmit }) => {
   const flatListRef = useRef<FlatList>(null);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
@@ -26,7 +27,7 @@ export const Chat: React.FC<ChatProps> = ({ messages }) => {
     if (item.role === 'user') {
       return <UserBlock message={item} />;
     }
-    return <AIBlock message={item} />;
+    return <AIBlock message={item} onCardSubmit={onCardSubmit} />;
   };
 
   const keyExtractor = (item: ChatMessage, index: number) =>

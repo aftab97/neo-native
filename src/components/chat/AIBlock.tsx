@@ -1,21 +1,61 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useLayoutStore } from '../../store';
 import { ChatMessage } from '../../types/chat';
 import { colors, codeColors } from '../../theme/colors';
+import { AdaptiveCardViewer } from './AdaptiveCardViewer';
 
 interface AIBlockProps {
   message: ChatMessage;
+  onCardSubmit?: (data: any) => void;
 }
+
+interface ParsedResponse {
+  type: 'card' | 'text' | 'chart';
+  content?: any;
+  text?: string;
+  spec?: string;
+}
+
+/**
+ * Parse JSON responses from the action agent
+ * Returns array of parsed responses or null if not JSON
+ */
+const parseJsonResponses = (message: string): ParsedResponse[] | null => {
+  if (!message) return null;
+
+  const allResponses: ParsedResponse[] = [];
+
+  try {
+    // Handle case where multiple JSON objects are concatenated (Adaptive Cards)
+    const rawMessages = message
+      .trim()
+      .split(/}(?=\s*{)/g) // split at boundary between objects
+      .map((part, idx, arr) => (idx < arr.length - 1 ? part + '}' : part));
+
+    for (const raw of rawMessages) {
+      const json = JSON.parse(raw);
+      if (Array.isArray(json.responses)) {
+        allResponses.push(...json.responses);
+      }
+    }
+
+    return allResponses.length > 0 ? allResponses : null;
+  } catch (err) {
+    // Not valid JSON, return null to render as markdown
+    return null;
+  }
+};
 
 /**
  * AI response block - matches web app styling
  * - Left-aligned, full width
  * - Markdown rendering with syntax highlighting
+ * - Adaptive card support for action agent responses
  * - Status indicators during streaming
  */
-export const AIBlock: React.FC<AIBlockProps> = ({ message }) => {
+export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
   const theme = isDarkTheme ? 'dark' : 'light';
@@ -31,6 +71,11 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message }) => {
 
   const isLoading = message.status && message.status.length > 0 && !message.message;
   const hasError = message.status?.includes('Error');
+
+  // Parse JSON responses (memoized to avoid re-parsing on each render)
+  const parsedResponses = useMemo(() => {
+    return parseJsonResponses(message.message || '');
+  }, [message.message]);
 
   // Markdown styles matching web app
   const markdownStyles = {
@@ -165,6 +210,39 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message }) => {
     },
   };
 
+  // Render parsed responses (cards, text, charts)
+  const renderParsedResponses = () => {
+    if (!parsedResponses) return null;
+
+    return parsedResponses.map((res, idx) => {
+      if (res.type === 'card' && res.content) {
+        return (
+          <AdaptiveCardViewer
+            key={`card-${idx}`}
+            content={res.content}
+            onSubmit={onCardSubmit}
+          />
+        );
+      } else if (res.type === 'text' && res.text) {
+        return (
+          <Markdown key={`text-${idx}`} style={markdownStyles}>
+            {res.text}
+          </Markdown>
+        );
+      } else if (res.type === 'chart' && res.spec) {
+        // TODO: Implement chart rendering
+        return (
+          <View key={`chart-${idx}`} style={styles.chartPlaceholder}>
+            <Text style={{ color: secondaryTextColor }}>
+              Chart visualization not yet supported in mobile
+            </Text>
+          </View>
+        );
+      }
+      return null;
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Status indicator */}
@@ -184,7 +262,13 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message }) => {
 
       {/* Message content */}
       {message.message ? (
-        <Markdown style={markdownStyles}>{message.message}</Markdown>
+        parsedResponses ? (
+          // Render parsed JSON responses (adaptive cards, etc.)
+          renderParsedResponses()
+        ) : (
+          // Render as markdown
+          <Markdown style={markdownStyles}>{message.message}</Markdown>
+        )
       ) : isLoading ? null : (
         <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
           No response
@@ -212,5 +296,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     fontStyle: 'italic',
+  },
+  chartPlaceholder: {
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+    marginVertical: 8,
   },
 });

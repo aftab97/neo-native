@@ -14,44 +14,50 @@ import { parseStreamChunk, createMessageId } from "../utils/parseStream";
 interface ChatPromptVariables {
   question: string;
   sessionId: string | null;
+  /** Agent to route the request to (backend) */
   agent?: string;
+  /** Agent for cache key (when different from routing agent, e.g., card submits) */
+  cacheAgent?: string;
   userEmail: string;
   files?: any[];
+  /** When true, use session-based cache key ['chat', { id: session_id }] */
+  isPromptFromChatPage?: boolean;
+  /** When true, use agent-based cache key ['chat', agent] */
   isPromptFromAgentPage?: boolean;
-  /** Use session-based cache key (for continuing history chats) */
-  isHistoryChat?: boolean;
+  /** When true, skip adding user message to cache (used for adaptive card submissions) */
+  isJson?: boolean;
 }
 
 /**
  * Get chat history from cache (for display)
+ * Data is populated via setQueryData from mutations
  */
 export const useChatHistory = (agentId?: string) => {
-  const queryClient = useQueryClient();
   const queryKey = queryKeys.chat(agentId);
 
-  return useQuery({
+  return useQuery<ChatMessage[]>({
     queryKey,
-    queryFn: () => queryClient.getQueryData<ChatMessage[]>(queryKey) ?? [],
+    // Return empty array - data is set via setQueryData in mutations
+    queryFn: () => [],
     staleTime: Infinity,
+    // Ensure we always return an array even if cache is empty
+    placeholderData: [],
   });
 };
 
 /**
  * Get chat by session ID
+ * Data is populated via setQueryData from useMutateChatHistory and mutations
  */
 export const useChatBySessionId = (sessionId?: string | null) => {
-  const queryClient = useQueryClient();
-
-  return useQuery({
+  return useQuery<ChatMessage[]>({
     queryKey: sessionId ? queryKeys.chatById(sessionId) : ["chat", "none"],
-    queryFn: () =>
-      sessionId
-        ? queryClient.getQueryData<ChatMessage[]>(
-            queryKeys.chatById(sessionId)
-          ) ?? []
-        : [],
+    // Return empty array - data is set via setQueryData
+    queryFn: () => [],
     enabled: !!sessionId,
     staleTime: Infinity,
+    // Ensure we always return an array even if cache is empty
+    placeholderData: [],
   });
 };
 
@@ -71,11 +77,16 @@ export const useMutateChatPrompt = () => {
         question,
         sessionId,
         agent,
+        cacheAgent,
         userEmail,
         files = [],
+        isPromptFromChatPage = false,
         isPromptFromAgentPage = false,
-        isHistoryChat = false,
+        isJson = false,
       } = variables;
+
+      // Use cacheAgent for cache key if provided, otherwise fall back to agent
+      const agentForCache = cacheAgent ?? agent;
 
       // Generate unique message IDs
       const messageIdUser = createMessageId("user");
@@ -95,33 +106,53 @@ export const useMutateChatPrompt = () => {
       setIsPromptPaused(true);
       setLastPrompt(question);
 
-      // Determine cache key based on context
-      const chatKey =
-        isHistoryChat && sessionId
-          ? queryKeys.chatById(sessionId)
-          : agent
-          ? queryKeys.chat(agent)
-          : queryKeys.chat();
+      // Determine cache key based on context (matches web app logic)
+      // - isPromptFromChatPage: use session-based key ['chat', { id: session_id }]
+      // - isPromptFromAgentPage: use agent-based key ['chat', agentForCache]
+      // - Neither: use general chat key ['chat']
+      // Note: agentForCache may differ from agent (e.g., card submits route to 'action' but cache to current agent)
+      const chatKey = isPromptFromChatPage
+        ? queryKeys.chatById(sessionId || "")
+        : isPromptFromAgentPage
+        ? queryKeys.chat(agentForCache)
+        : queryKeys.chat();
 
-      // Add user message to cache optimistically
-      queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => [
-        ...old,
-        {
-          role: "user",
-          message: question,
-          message_id: messageIdUser,
-          session_id: sessionId || "",
-          order: old.length,
-        },
-        {
+      // Add messages to cache optimistically
+      // When isJson is true (adaptive card submissions), skip adding user message
+      queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+        const newMessages: ChatMessage[] = [];
+
+        // Calculate order based on max existing order, not array length
+        // This handles cases where messages were filtered (non-contiguous orders)
+        const maxOrder = old.reduce(
+          (max, msg) => (msg.order !== undefined ? Math.max(max, msg.order) : max),
+          -1
+        );
+        const nextOrder = maxOrder + 1;
+
+        // Only add user message if not a JSON submission (adaptive card)
+        if (!isJson) {
+          newMessages.push({
+            role: "user",
+            message: question,
+            message_id: messageIdUser,
+            session_id: sessionId || "",
+            order: nextOrder,
+          });
+        }
+
+        // Always add AI message placeholder
+        newMessages.push({
           role: "ai",
           message: "",
           message_id: messageIdAi,
           session_id: sessionId || "",
           status: ["Processing..."],
-          order: old.length + 1,
-        },
-      ]);
+          order: nextOrder + (isJson ? 0 : 1),
+        });
+
+        return [...old, ...newMessages];
+      });
 
       // Accumulation variables
       let accumulatedMessage = "";

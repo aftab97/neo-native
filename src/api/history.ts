@@ -4,6 +4,11 @@ import { queryKeys } from './queryClient';
 import { ENDPOINTS } from '../config/api';
 import { ChatHistory, ChatMessage } from '../types/chat';
 import { usePopupStore } from '../store';
+import {
+  normaliseActionCardTitle,
+  filterActionCardUserMessages,
+  shouldHideTitle,
+} from '../utils/filterActionCards';
 
 interface HistoryTitlesResponse {
   sessions: Array<{
@@ -42,13 +47,20 @@ export const useGetChatTitles = () => {
 
       const data: HistoryTitlesResponse = await response.json();
 
-      // Map to ChatHistory format
-      return (data.sessions || []).map((session) => ({
-        session_id: session.session_id,
-        title: session.session_title || 'Untitled Chat',
-        updated_at: session.last_updated || '',
-        created_at: session.last_updated || '',
-      }));
+      // Map to ChatHistory format and filter/normalize titles
+      return (data.sessions || [])
+        .map((session) => {
+          // Normalize the title (extract meaningful text from JSON if needed)
+          const normalisedTitle = normaliseActionCardTitle(session.session_title);
+          return {
+            session_id: session.session_id,
+            title: normalisedTitle || 'Untitled Chat',
+            updated_at: session.last_updated || '',
+            created_at: session.last_updated || '',
+          };
+        })
+        // Filter out sessions where title is still just JSON or empty
+        .filter((session) => !shouldHideTitle(session.title));
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
@@ -95,7 +107,11 @@ export const useMutateChatHistory = () => {
         messages = data.history;
       }
 
-      return { messages, sessionId };
+      // Filter out user messages that are JSON payloads from action agent
+      // These are machine-to-machine messages (adaptive card button clicks)
+      const filteredMessages = filterActionCardUserMessages(messages);
+
+      return { messages: filteredMessages, sessionId };
     },
     onSuccess: (data, variables) => {
       // Store the loaded history in the query cache
