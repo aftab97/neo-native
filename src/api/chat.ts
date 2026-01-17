@@ -225,6 +225,30 @@ export const useMutateChatPrompt = () => {
             const parsed = parseStreamChunk(fullChunk);
 
             if (parsed) {
+              // Check for live chat start trigger
+              if (parsed.isLiveChatStart && sessionId) {
+                console.log("[livechat] ========== LIVE CHAT START DETECTED ==========");
+                console.log("[livechat] Session ID:", sessionId);
+                console.log("[livechat] Start type:", parsed.isLiveChatStart.startType);
+
+                // Publish live chat trigger to query cache
+                const triggerKey = ["liveChatTrigger", sessionId];
+                const existingTrigger = queryClient.getQueryData(triggerKey);
+
+                if (!existingTrigger) {
+                  const trigger = {
+                    liveSessionId: parsed.isLiveChatStart.liveSessionId || sessionId,
+                    message: parsed.isLiveChatStart.message,
+                    startType: parsed.isLiveChatStart.startType,
+                    ts: Date.now(),
+                  };
+                  console.log("[livechat] Publishing trigger to cache");
+                  queryClient.setQueryData(triggerKey, trigger);
+                  queryClient.invalidateQueries({ queryKey: triggerKey });
+                }
+                console.log("[livechat] ================================================");
+              }
+
               // Accumulate message content
               if (parsed.message) {
                 accumulatedMessage += parsed.message;
@@ -256,6 +280,7 @@ export const useMutateChatPrompt = () => {
                     status: accumulatedStatus.length > 0 ? [...accumulatedStatus] : ["Processing..."],
                     contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
                     suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
+                    isLiveChatStart: parsed.isLiveChatStart || updated[lastIndex].isLiveChatStart,
                   };
                 }
 

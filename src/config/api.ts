@@ -20,6 +20,7 @@ export const ENDPOINTS = {
   // Session
   DELETE_SESSION: '/api/v1/session/session',
   DELETE_ALL_SESSIONS: '/api/v1/session/sessions',
+  ISSUE_SESSION_TOKEN: '/api/v1/session/issue12hSessionToken',
 
   // User
   USER_INFO: '/api/v1/session/userinfo',

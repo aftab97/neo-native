@@ -16,7 +16,7 @@ export interface MessageContent {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'ai';
+  role: 'user' | 'ai' | 'live_chat_agent';
   message: string;
   message_id: string;
   session_id: string;
@@ -26,6 +26,12 @@ export interface ChatMessage {
   suggestedAgents?: string[];
   metadata?: Record<string, unknown>;
   files?: FileMetaData[];
+  /** Marker for live chat start in this message */
+  isLiveChatStart?: {
+    liveSessionId: string;
+    message: string;
+    startType?: string;
+  } | null;
 }
 
 export interface FileMetaData {

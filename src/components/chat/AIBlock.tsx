@@ -9,6 +9,8 @@ import { AdaptiveCardViewer } from './AdaptiveCardViewer';
 interface AIBlockProps {
   message: ChatMessage;
   onCardSubmit?: (data: any) => void;
+  /** True when this message is from a live chat agent (not AI) */
+  isLiveChatAgent?: boolean;
 }
 
 interface ParsedResponse {
@@ -55,7 +57,7 @@ const parseJsonResponses = (message: string): ParsedResponse[] | null => {
  * - Adaptive card support for action agent responses
  * - Status indicators during streaming
  */
-export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit }) => {
+export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveChatAgent = false }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
   const theme = isDarkTheme ? 'dark' : 'light';

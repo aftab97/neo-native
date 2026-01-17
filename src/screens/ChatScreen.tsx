@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useLayoutStore, useAgentStore, useSessionStore } from '../store';
 import {
   useChatHistory,
@@ -12,17 +13,23 @@ import {
   queryKeys,
 } from '../api';
 import { Chat, ChatInput, Loader } from '../components';
-import { createSessionId } from '../utils/parseStream';
+import { createSessionId, createMessageId } from '../utils/parseStream';
+import { useLiveChatListener } from '../hooks';
+import { ChatMessage } from '../types/chat';
 import type { ChatScreenProps } from '../navigation/types';
 
 export const ChatScreen: React.FC<ChatScreenProps> = () => {
   const route = useRoute<ChatScreenProps['route']>();
   const { sessionId: routeSessionId, agent: routeAgent } = route.params || {};
 
+  const queryClient = useQueryClient();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { selectedAgent, setSelectedAgent } = useAgentStore();
   const { currentSessionId, setCurrentSessionId } = useSessionStore();
   const { data: user } = useGetUser();
+
+  // Get the effective session ID for live chat
+  const activeSessionForLiveChat = routeSessionId || currentSessionId;
 
   // Determine which session/agent we're viewing
   // IMPORTANT: Only use selectedAgent if we have a routeAgent context
@@ -45,6 +52,31 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
   const chatMutation = useMutateChatPrompt();
   const historyMutation = useMutateChatHistory();
   const cancelMutation = useCancelChatPrompt();
+
+  // Compute the chat cache key for live chat message routing
+  const liveChatKey = routeSessionId
+    ? queryKeys.chatById(routeSessionId)
+    : useGeneralChat
+    ? queryKeys.chat()
+    : queryKeys.chat(activeAgent || undefined);
+
+  // Live chat - watches for triggers and auto-connects
+  const liveChat = useLiveChatListener(activeSessionForLiveChat || null, liveChatKey);
+
+  // Watch connection state via query cache for reactive updates
+  // This query gets invalidated when connection state changes, triggering re-renders
+  const { data: connectionState } = useQuery<{ connected: boolean; reason?: string }>({
+    queryKey: ['liveChatConnection', activeSessionForLiveChat || 'none'],
+    queryFn: () => {
+      const cached = queryClient.getQueryData<{ connected: boolean }>(['liveChatConnection', activeSessionForLiveChat]);
+      return cached || { connected: false };
+    },
+    enabled: !!activeSessionForLiveChat,
+    staleTime: 0,
+  });
+
+  // Use the cache state as source of truth (it gets updated on socket events)
+  const isLiveChatActive = connectionState?.connected === true;
 
   // Load history if we have a session ID from route
   useEffect(() => {
@@ -103,6 +135,52 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
     }
   };
 
+  // Handle live chat message send (via WebSocket)
+  const handleLiveChatSend = useCallback(
+    (message: string) => {
+      if (!isLiveChatActive || !activeSessionForLiveChat) {
+        console.warn('[livechat] Cannot send - not connected');
+        return;
+      }
+
+      // Add user message to cache optimistically
+      const chatKey = routeSessionId
+        ? queryKeys.chatById(routeSessionId)
+        : useGeneralChat
+        ? queryKeys.chat()
+        : queryKeys.chat(activeAgent || undefined);
+
+      const existing = queryClient.getQueryData<ChatMessage[]>(chatKey) ?? [];
+      const maxOrder = existing.reduce(
+        (max, msg) => (msg.order !== undefined ? Math.max(max, msg.order) : max),
+        -1
+      );
+
+      queryClient.setQueryData<ChatMessage[]>(chatKey, [
+        ...existing,
+        {
+          role: 'user',
+          message,
+          message_id: createMessageId('user'),
+          session_id: activeSessionForLiveChat,
+          order: maxOrder + 1,
+        },
+      ]);
+
+      // Send via WebSocket
+      liveChat.sendMessage(message);
+    },
+    [
+      isLiveChatActive,
+      activeSessionForLiveChat,
+      routeSessionId,
+      useGeneralChat,
+      activeAgent,
+      queryClient,
+      liveChat,
+    ]
+  );
+
   // Handle adaptive card button submit actions
   const handleCardSubmit = (data: any) => {
     // Use existing session or create new one
@@ -151,6 +229,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
         onCancel={handleCancel}
         placeholder={activeAgent ? `Ask ${activeAgent}...` : 'Ask Neo...'}
         isLoading={chatMutation.isPending}
+        isLiveChatActive={isLiveChatActive}
+        onLiveChatSend={handleLiveChatSend}
       />
     </KeyboardAvoidingView>
   );

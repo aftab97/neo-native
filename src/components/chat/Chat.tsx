@@ -27,7 +27,14 @@ export const Chat: React.FC<ChatProps> = ({ messages, onCardSubmit }) => {
     if (item.role === 'user') {
       return <UserBlock message={item} />;
     }
-    return <AIBlock message={item} onCardSubmit={onCardSubmit} />;
+    // Render both 'ai' and 'live_chat_agent' messages using AIBlock
+    return (
+      <AIBlock
+        message={item}
+        onCardSubmit={onCardSubmit}
+        isLiveChatAgent={item.role === 'live_chat_agent'}
+      />
+    );
   };
 
   const keyExtractor = (item: ChatMessage, index: number) =>

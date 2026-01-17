@@ -15,3 +15,17 @@ export {
   useCancelChatPrompt,
   useClearChat,
 } from './chat';
+export {
+  useLiveChatQuery,
+  lcLog,
+  lcWarn,
+  lcError,
+} from './liveChat';
+export type { LiveChatApi, LiveChatCache } from './liveChat';
+export {
+  useSessionToken,
+  getOrFetchJwt,
+  getStoredJwt,
+  clearStoredJwt,
+  fetchAndStoreSessionToken,
+} from './sessionToken';

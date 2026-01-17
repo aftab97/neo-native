@@ -34,4 +34,12 @@ export const queryKeys = {
   // App
   appLibrary: ['appLibrary'] as const,
   dailyNews: ['dailyNews'] as const,
+
+  // Live Chat
+  liveChat: (sessionId: string, userId: string) =>
+    ['liveChat', sessionId, userId] as const,
+  liveChatTrigger: (sessionId: string) =>
+    ['liveChatTrigger', sessionId] as const,
+  liveChatConnection: (sessionId: string) =>
+    ['liveChatConnection', sessionId] as const,
 } as const;

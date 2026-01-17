@@ -1,5 +1,11 @@
 import { ChatMessage, MessageContent, ChatContentType } from '../types/chat';
 
+interface LiveChatStart {
+  liveSessionId: string;
+  message: string;
+  startType: string;
+}
+
 interface ParsedChunk {
   message?: string;
   status?: string[];
@@ -9,6 +15,7 @@ interface ParsedChunk {
   message_id?: string;
   agent?: string;
   error?: boolean;
+  isLiveChatStart?: LiveChatStart | null;
 }
 
 /**
@@ -60,6 +67,146 @@ const extractMessageFromCallBackend = (chunk: string): {
     return { message, backend, tools };
   } catch (error) {
     console.debug('Error parsing CALL_BACKEND chunk:', error);
+    return null;
+  }
+};
+
+/**
+ * Extract live chat start signal from CALL_BACKEND event metadata
+ * Looks for livechat_start in metadata or specific message patterns
+ */
+const extractLiveChatStartFromCallBackend = (chunk: string): LiveChatStart | null => {
+  if (!chunk.includes('event: CALL_BACKEND')) return null;
+
+  const afterEvent = chunk.split('CALL_BACKEND')[1]?.trim();
+  if (!afterEvent) return null;
+
+  try {
+    const jsonString = afterEvent
+      .replace(/^data:\s*/, '')
+      .replace(/\n/g, '')
+      .split('event:')[0]
+      .trim();
+
+    const json = JSON.parse(jsonString);
+    const metadata = json?.response?.object?.metadata;
+    const rawMessage = json?.response?.object?.message || '';
+
+    // The message might be a JSON string containing responses array
+    // Try to extract the actual text content
+    let message = rawMessage;
+    let extractedText = '';
+    try {
+      const parsedMessage = JSON.parse(rawMessage);
+      if (parsedMessage?.responses && Array.isArray(parsedMessage.responses)) {
+        // Combine all text responses
+        extractedText = parsedMessage.responses
+          .filter((r: any) => r.type === 'text' && r.text)
+          .map((r: any) => r.text)
+          .join(' ');
+        console.log('[livechat] Extracted text from responses:', extractedText.substring(0, 100));
+      }
+    } catch {
+      // Not JSON, use raw message
+      extractedText = rawMessage;
+    }
+
+    // Use extracted text if available, otherwise use raw message
+    const textToCheck = extractedText || message;
+
+    // Check for explicit livechat_start in metadata
+    if (metadata?.livechat_start || metadata?.live_chat_start) {
+      const lcData = metadata.livechat_start || metadata.live_chat_start;
+      console.log('[livechat] Found explicit livechat_start in metadata');
+      return {
+        liveSessionId: lcData.session_id || lcData.liveSessionId || '',
+        message: lcData.message || textToCheck || 'Connecting you to a live agent...',
+        startType: lcData.start_type || lcData.startType || 'metadata',
+      };
+    }
+
+    // Check for init_suffix pattern (e.g., "...init_live_chat")
+    if (metadata?.init_suffix && /live.?chat/i.test(metadata.init_suffix)) {
+      console.log('[livechat] Found init_suffix pattern:', metadata.init_suffix);
+      return {
+        liveSessionId: '',
+        message: textToCheck || 'Connecting you to a live agent...',
+        startType: 'init_suffix',
+      };
+    }
+
+    // Check for wait_phrase pattern
+    if (metadata?.wait_phrase && /agent|live/i.test(metadata.wait_phrase)) {
+      console.log('[livechat] Found wait_phrase pattern:', metadata.wait_phrase);
+      return {
+        liveSessionId: '',
+        message: metadata.wait_phrase,
+        startType: 'wait_phrase',
+      };
+    }
+
+    // Heuristic: check message content for live chat patterns
+    // These patterns should only match IMPERATIVE messages directing the user,
+    // NOT descriptive text about features
+
+    // Pattern: "Please wait while I connect you to an agent"
+    if (textToCheck && /please\s+wait\s+while\s+I\s+connect\s+you/i.test(textToCheck)) {
+      console.log('[livechat] Heuristic match: "please wait while I connect you" pattern');
+      return {
+        liveSessionId: '',
+        message: textToCheck,
+        startType: 'heuristic',
+      };
+    }
+
+    // Pattern: "I'm connecting you to an agent" / "I will connect you to an agent"
+    // Must be imperative (I'm/I'll/I will) not descriptive
+    if (textToCheck && /I('m|'ll|.will|.am)\s+connect(ing)?\s+you\s+to\s+(an?\s+)?agent/i.test(textToCheck)) {
+      console.log('[livechat] Heuristic match: "I am connecting you to agent" pattern');
+      return {
+        liveSessionId: '',
+        message: textToCheck,
+        startType: 'heuristic',
+      };
+    }
+
+    // Pattern: "waiting to be connected" (user is waiting)
+    if (textToCheck && /waiting\s+to\s+be\s+connected/i.test(textToCheck)) {
+      console.log('[livechat] Heuristic match: "waiting to be connected" pattern');
+      return {
+        liveSessionId: '',
+        message: textToCheck,
+        startType: 'heuristic',
+      };
+    }
+
+    // Pattern: "You can end this live chat session" - indicates active live chat
+    // This is specific enough to not match general feature descriptions
+    if (textToCheck && /you\s+can\s+end\s+(this\s+)?live\s*chat/i.test(textToCheck)) {
+      console.log('[livechat] Heuristic match: "you can end this live chat" pattern');
+      return {
+        liveSessionId: '',
+        message: textToCheck,
+        startType: 'heuristic',
+      };
+    }
+
+    // Pattern: "connecting you to a live agent" - imperative action
+    if (textToCheck && /connecting\s+you\s+to\s+(a\s+)?(live\s+)?agent/i.test(textToCheck)) {
+      console.log('[livechat] Heuristic match: "connecting you to agent" pattern');
+      return {
+        liveSessionId: '',
+        message: textToCheck,
+        startType: 'heuristic',
+      };
+    }
+
+    // REMOVED: "live chat session" pattern - too broad, matches feature descriptions
+    // REMOVED: generic "connect to agent" pattern - too broad
+
+    return null;
+  } catch (error) {
+    console.debug('Error extracting live chat start:', error);
     return null;
   }
 };
@@ -163,7 +310,19 @@ export const parseStreamChunk = (chunk: string): ParsedChunk | null => {
   // Handle CALL_BACKEND event (main message content)
   if (chunk.includes('event: CALL_BACKEND')) {
     const parsed = extractMessageFromCallBackend(chunk);
-    if (parsed) {
+    const liveChatStart = extractLiveChatStartFromCallBackend(chunk);
+
+    if (liveChatStart) {
+      console.log('[livechat] ========== LIVE CHAT START EXTRACTED ==========');
+      console.log('[livechat] Details:', JSON.stringify(liveChatStart, null, 2));
+      console.log('[livechat] ================================================');
+      result.isLiveChatStart = liveChatStart;
+      result.status = ['Connecting you to an Agent...'];
+      result.message = liveChatStart.message;
+      if (liveChatStart.message) {
+        result.contents = [{ type: ChatContentType.TEXT, content: liveChatStart.message }];
+      }
+    } else if (parsed) {
       result.status = ['Intent is clear', 'Neo is generating your answer...'];
       result.message = parsed.message;
       result.agent = parsed.backend;

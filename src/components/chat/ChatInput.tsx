@@ -17,6 +17,10 @@ interface ChatInputProps {
   placeholder?: string;
   /** External loading state (e.g., from mutation.isPending) */
   isLoading?: boolean;
+  /** True when live chat WebSocket is active */
+  isLiveChatActive?: boolean;
+  /** Called instead of onSend when live chat is active */
+  onLiveChatSend?: (message: string) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -24,6 +28,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onCancel,
   placeholder = 'Ask Neo...',
   isLoading = false,
+  isLiveChatActive = false,
+  onLiveChatSend,
 }) => {
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
@@ -64,11 +70,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const handleSend = () => {
     const message = localValue.trim();
     if (message && !isLoading) {
-      onSend(message);
+      // Route to live chat if active, otherwise use normal send
+      if (isLiveChatActive && onLiveChatSend) {
+        onLiveChatSend(message);
+      } else {
+        onSend(message);
+      }
       setLocalValue(''); // Clear immediately
       Keyboard.dismiss();
     }
   };
+
+  // Use different placeholder when live chat is active
+  const effectivePlaceholder = isLiveChatActive
+    ? 'Message live agent...'
+    : placeholder;
 
   const handleCancel = () => {
     onCancel?.();
@@ -97,7 +113,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <TextInput
           ref={inputRef}
           style={[styles.input, { color: textColor }]}
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           placeholderTextColor={placeholderColor}
           value={localValue}
           onChangeText={handleChangeText}
