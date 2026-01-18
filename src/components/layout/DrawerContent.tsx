@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,26 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useNavigation } from "@react-navigation/native";
-import { useLayoutStore, useAgentStore } from "../../store";
+import {
+  useLayoutStore,
+  useAgentStore,
+  useNotificationStore,
+} from "../../store";
 import { useResetChat } from "../../hooks";
-import { useGetChatTitles } from "../../api";
+import { useGetChatTitles, useNotifications } from "../../api";
 import { AGENTS } from "../../config/agents";
-import { PlusIcon, ChatIcon, AgentIcon, NeoLogo } from "../icons";
+import {
+  PlusIcon,
+  ChatIcon,
+  AgentIcon,
+  NeoLogo,
+  BellIcon,
+  HistoryIcon,
+} from "../icons";
+import { NotificationCard } from "../notifications";
 import { colors } from "../../theme/colors";
+
+type TabType = "history" | "notifications";
 
 export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   navigation: drawerNavigation,
@@ -27,6 +41,22 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const { resetAll, resetForAgent } = useResetChat();
   const { data: chatTitles = [], refetch, isRefetching } = useGetChatTitles();
 
+  // Notifications
+  const {
+    data: notifications = [],
+    isLoading: isLoadingNotifications,
+    isRefetching: isRefetchingNotifications,
+    refetch: refetchNotifications,
+  } = useNotifications();
+  const dismissedIds = useNotificationStore((state) => state.dismissedIds);
+  const visibleNotifications = notifications.filter(
+    (notification) => !dismissedIds.has(notification.id)
+  );
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabType>("history");
+
+  // Theme colors
   const backgroundColor = isDarkTheme
     ? colors.gray["1000"]
     : colors.gray["000"];
@@ -37,26 +67,148 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const borderColor = isDarkTheme ? colors.gray["800"] : colors.gray["200"];
   const hoverBg = isDarkTheme ? colors.gray["900"] : colors.gray["050"];
   const accentColor = colors.blue["700"];
+  const tabActiveBg = isDarkTheme ? colors.gray["800"] : colors.gray["100"];
+  const tabInactiveBg = "transparent";
 
   const handleNewChat = () => {
-    // Reset chat cache and navigate to homepage
     resetAll();
     drawerNavigation.closeDrawer();
     navigation.navigate("Home");
   };
 
   const handleChatPress = (sessionId: string) => {
-    // Don't reset - load the existing chat session
     drawerNavigation.closeDrawer();
     navigation.navigate("Chat", { sessionId });
   };
 
   const handleAgentPress = (agentId: string) => {
-    // Reset the agent's chat cache (fresh start)
     resetForAgent(agentId);
     drawerNavigation.closeDrawer();
     navigation.navigate("Agent", { agentId });
   };
+
+  const renderHistoryTab = () => (
+    <ScrollView
+      style={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          tintColor={accentColor}
+          colors={[accentColor]}
+        />
+      }
+    >
+      {/* Recent Chats Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
+          Recent Chats
+        </Text>
+        {chatTitles.length === 0 ? (
+          <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
+            No recent chats
+          </Text>
+        ) : (
+          chatTitles.slice(0, 10).map((chat) => (
+            <TouchableOpacity
+              key={chat.session_id}
+              style={[styles.listItem, { backgroundColor: "transparent" }]}
+              onPress={() => handleChatPress(chat.session_id)}
+              accessibilityLabel={`Open chat: ${chat.title}`}
+              accessibilityRole="button"
+            >
+              <ChatIcon size={18} color={secondaryTextColor} />
+              <Text
+                style={[styles.listItemText, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {chat.title || "Untitled Chat"}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+
+      {/* Agents Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
+          Agents
+        </Text>
+        {AGENTS.slice(0, 8).map((agent) => (
+          <TouchableOpacity
+            key={agent.id}
+            style={[
+              styles.listItem,
+              {
+                backgroundColor:
+                  selectedAgent === agent.id ? hoverBg : "transparent",
+              },
+            ]}
+            onPress={() => handleAgentPress(agent.id)}
+            accessibilityLabel={`Open ${agent.label} agent`}
+            accessibilityRole="button"
+          >
+            <AgentIcon type={agent.iconType} size={24} />
+            <Text
+              style={[styles.listItemText, { color: textColor }]}
+              numberOfLines={1}
+            >
+              {agent.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+
+  const renderNotificationsTab = () => (
+    <ScrollView
+      style={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.notificationsContainer}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetchingNotifications}
+          onRefresh={refetchNotifications}
+          tintColor={accentColor}
+          colors={[accentColor]}
+        />
+      }
+    >
+      {isLoadingNotifications ? (
+        <View style={styles.centerContent}>
+          <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
+            Loading notifications...
+          </Text>
+        </View>
+      ) : visibleNotifications.length === 0 ? (
+        <View style={styles.centerContent}>
+          <BellIcon size={48} color={secondaryTextColor} />
+          <Text
+            style={[
+              styles.emptyText,
+              { color: secondaryTextColor, marginTop: 12 },
+            ]}
+          >
+            No notifications
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtext,
+              { color: secondaryTextColor, marginTop: 4 },
+            ]}
+          >
+            You're all caught up!
+          </Text>
+        </View>
+      ) : (
+        visibleNotifications.map((notification) => (
+          <NotificationCard key={notification.id} {...notification} />
+        ))
+      )}
+    </ScrollView>
+  );
 
   return (
     <View
@@ -70,89 +222,99 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         </Text>
       </View>
 
-      {/* New Chat Button */}
-      <TouchableOpacity
-        style={[styles.newChatButton, { backgroundColor: accentColor }]}
-        onPress={handleNewChat}
-        accessibilityLabel="Start new chat"
-        accessibilityRole="button"
-      >
-        <PlusIcon size={20} color="#ffffff" />
-        <Text style={styles.newChatText}>New Chat</Text>
-      </TouchableOpacity>
-
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={accentColor}
-            colors={[accentColor]}
+      {/* Tab Switcher */}
+      <View style={[styles.tabContainer, { backgroundColor: hoverBg }]}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            {
+              backgroundColor:
+                activeTab === "history" ? tabActiveBg : tabInactiveBg,
+            },
+          ]}
+          onPress={() => setActiveTab("history")}
+          accessibilityLabel="History tab"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === "history" }}
+        >
+          <HistoryIcon
+            size={20}
+            color={activeTab === "history" ? accentColor : secondaryTextColor}
           />
-        }
-      >
-        {/* Recent Chats Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-            Recent Chats
+          <Text
+            style={[
+              styles.tabText,
+              {
+                color:
+                  activeTab === "history" ? accentColor : secondaryTextColor,
+              },
+            ]}
+          >
+            History
           </Text>
-          {chatTitles.length === 0 ? (
-            <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-              No recent chats
-            </Text>
-          ) : (
-            chatTitles.slice(0, 10).map((chat) => (
-              <TouchableOpacity
-                key={chat.session_id}
-                style={[styles.listItem, { backgroundColor: "transparent" }]}
-                onPress={() => handleChatPress(chat.session_id)}
-                accessibilityLabel={`Open chat: ${chat.title}`}
-                accessibilityRole="button"
-              >
-                <ChatIcon size={18} color={secondaryTextColor} />
-                <Text
-                  style={[styles.listItemText, { color: textColor }]}
-                  numberOfLines={1}
-                >
-                  {chat.title || "Untitled Chat"}
-                </Text>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+        </TouchableOpacity>
 
-        {/* Agents Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-            Agents
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            {
+              backgroundColor:
+                activeTab === "notifications" ? tabActiveBg : tabInactiveBg,
+            },
+          ]}
+          onPress={() => setActiveTab("notifications")}
+          accessibilityLabel="Notifications tab"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === "notifications" }}
+        >
+          <View style={styles.tabIconContainer}>
+            <BellIcon
+              size={20}
+              color={
+                activeTab === "notifications" ? accentColor : secondaryTextColor
+              }
+            />
+            {visibleNotifications.length > 0 && (
+              <View style={[styles.badge, { backgroundColor: colors.red["500"] }]}>
+                <Text style={styles.badgeText}>
+                  {visibleNotifications.length > 99
+                    ? "99+"
+                    : visibleNotifications.length}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text
+            style={[
+              styles.tabText,
+              {
+                color:
+                  activeTab === "notifications"
+                    ? accentColor
+                    : secondaryTextColor,
+              },
+            ]}
+          >
+            Alerts
           </Text>
-          {AGENTS.slice(0, 8).map((agent) => (
-            <TouchableOpacity
-              key={agent.id}
-              style={[
-                styles.listItem,
-                {
-                  backgroundColor:
-                    selectedAgent === agent.id ? hoverBg : "transparent",
-                },
-              ]}
-              onPress={() => handleAgentPress(agent.id)}
-              accessibilityLabel={`Open ${agent.label} agent`}
-              accessibilityRole="button"
-            >
-              <AgentIcon type={agent.iconType} size={24} />
-              <Text
-                style={[styles.listItemText, { color: textColor }]}
-                numberOfLines={1}
-              >
-                {agent.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+        </TouchableOpacity>
+      </View>
+
+      {/* New Chat Button - Only show on history tab */}
+      {activeTab === "history" && (
+        <TouchableOpacity
+          style={[styles.newChatButton, { backgroundColor: accentColor }]}
+          onPress={handleNewChat}
+          accessibilityLabel="Start new chat"
+          accessibilityRole="button"
+        >
+          <PlusIcon size={20} color="#ffffff" />
+          <Text style={styles.newChatText}>New Chat</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === "history" ? renderHistoryTab() : renderNotificationsTab()}
 
       {/* Footer */}
       <View style={[styles.footer, { borderTopColor: borderColor }]}>
@@ -176,11 +338,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  tabContainer: {
+    flexDirection: "row",
+    margin: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  tabIconContainer: {
+    position: "relative",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "700",
+  },
   newChatButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    margin: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
     padding: 12,
     borderRadius: 12,
     gap: 8,
@@ -220,6 +423,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic",
     paddingVertical: 8,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontSize: 12,
+    textAlign: "center",
+  },
+  notificationsContainer: {
+    padding: 16,
+    gap: 12,
+  },
+  centerContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
   },
   footer: {
     padding: 16,

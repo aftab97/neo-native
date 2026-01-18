@@ -29,3 +29,10 @@ export {
   clearStoredJwt,
   fetchAndStoreSessionToken,
 } from './sessionToken';
+export {
+  useNotifications,
+  useNotificationCount,
+  openNotificationLink,
+  type ProcessedNotification,
+  type NotificationVariant,
+} from './notifications';

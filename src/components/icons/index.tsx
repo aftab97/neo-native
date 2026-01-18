@@ -13,6 +13,9 @@ export { StopIcon } from './CommonIcons';
 export { MoonIcon } from './CommonIcons';
 export { SunIcon } from './CommonIcons';
 export { ChevronLeftIcon } from './CommonIcons';
+export { CloseIcon } from './CommonIcons';
+export { BellIcon } from './CommonIcons';
+export { HistoryIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';
