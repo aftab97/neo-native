@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,6 +16,13 @@ interface ProvidersProps {
 
 export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
+  const updateSystemTheme = useLayoutStore((state) => state.updateSystemTheme);
+  const systemColorScheme = useColorScheme();
+
+  // Sync system color scheme with store
+  useEffect(() => {
+    updateSystemTheme(systemColorScheme);
+  }, [systemColorScheme, updateSystemTheme]);
 
   // Initialize app services on startup
   useEffect(() => {

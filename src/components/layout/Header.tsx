@@ -10,33 +10,15 @@ const MenuIcon = ({ color }: { color: string }) => (
   <Text style={{ fontSize: 24, color }}>☰</Text>
 );
 
-const SunIcon = ({ color }: { color: string }) => (
-  <Text style={{ fontSize: 20, color }}>☀️</Text>
-);
-
-const MoonIcon = ({ color }: { color: string }) => (
-  <Text style={{ fontSize: 20, color }}>🌙</Text>
-);
-
 interface HeaderProps extends NativeStackHeaderProps {}
 
 export const Header: React.FC<HeaderProps> = ({ options }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { isDarkTheme, theme, setTheme } = useLayoutStore();
+  const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
   const toggleDrawer = () => {
     navigation.dispatch(DrawerActions.toggleDrawer());
-  };
-
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark');
-    } else if (theme === 'dark') {
-      setTheme('system');
-    } else {
-      setTheme('light');
-    }
   };
 
   const backgroundColor = isDarkTheme ? '#000000' : '#ffffff';
@@ -72,19 +54,8 @@ export const Header: React.FC<HeaderProps> = ({ options }) => {
           </Text>
         </View>
 
-        {/* Theme Toggle */}
-        <TouchableOpacity
-          onPress={toggleTheme}
-          style={styles.iconButton}
-          accessibilityLabel={`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`}
-          accessibilityRole="button"
-        >
-          {isDarkTheme ? (
-            <SunIcon color={textColor} />
-          ) : (
-            <MoonIcon color={textColor} />
-          )}
-        </TouchableOpacity>
+        {/* Empty spacer to keep title centered */}
+        <View style={styles.iconButton} />
       </View>
     </View>
   );
