@@ -6,6 +6,7 @@ import {
   Pressable,
   Animated,
   Dimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {
   PanGestureHandler,
@@ -146,10 +147,10 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
 
   if (!visible) return null;
 
-  // Slide animation
+  // Slide animation - drawer slides up from bottom
   const slideTranslateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [MAX_HEIGHT, 0],
+    outputRange: [DEFAULT_HEIGHT, 0],
   });
 
   // Combine slide animation with expand position
@@ -192,8 +193,14 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
       animationType="none"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()}>
+      <View style={styles.container}>
+        {/* Overlay - tapping closes the drawer */}
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.overlay} />
+        </TouchableWithoutFeedback>
+
+        {/* Drawer - positioned at bottom */}
+        <View style={styles.drawerContainer} pointerEvents="box-none">
           {expandable ? (
             <PanGestureHandler
               onGestureEvent={onGestureEvent}
@@ -205,17 +212,25 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
           ) : (
             drawerContent
           )}
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
+  },
+  drawerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   drawer: {
     borderTopWidth: 1,
