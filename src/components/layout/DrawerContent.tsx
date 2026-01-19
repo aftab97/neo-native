@@ -124,63 +124,71 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
     [hasNextPage, isFetchingNextPage, fetchNextPage]
   );
 
-  const renderHistoryTab = () => (
-    <View style={styles.scrollContainer}>
-      {/* Recent Chats Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-          Recent Chats
-        </Text>
-        {isLoadingChats ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={accentColor} />
-          </View>
-        ) : chatTitles.length === 0 ? (
-          <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-            No recent chats
+  const renderHistoryTab = () => {
+    const hasChats = chatTitles.length > 0;
+
+    return (
+      <View style={styles.scrollContainer}>
+        {/* Recent Chats Section - dynamic height when empty, flex when has data */}
+        <View
+          style={[
+            styles.section,
+            hasChats && styles.sectionFlex,
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
+            Recent Chats
           </Text>
-        ) : (
-          <ScrollView
-            style={styles.sectionScrollView}
-            showsVerticalScrollIndicator={false}
-            onScroll={handleChatsScroll}
-            scrollEventThrottle={400}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefetching}
-                onRefresh={refetch}
-                tintColor={accentColor}
-                colors={[accentColor]}
-              />
-            }
-          >
-            {chatTitles.map((chat) => (
-              <TouchableOpacity
-                key={chat.session_id}
-                style={[styles.listItem, { backgroundColor: "transparent" }]}
-                onPress={() => handleChatPress(chat.session_id)}
-                accessibilityLabel={`Open chat: ${chat.title}`}
-                accessibilityRole="button"
-              >
-                <View style={styles.iconContainer}>
-                  <ChatIcon size={18} color={secondaryTextColor} />
-                </View>
-                <Text
-                  style={[styles.listItemText, { color: textColor }]}
-                  numberOfLines={1}
+          {isLoadingChats ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={accentColor} />
+            </View>
+          ) : !hasChats ? (
+            <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
+              No recent chats
+            </Text>
+          ) : (
+            <ScrollView
+              style={styles.sectionScrollView}
+              showsVerticalScrollIndicator={false}
+              onScroll={handleChatsScroll}
+              scrollEventThrottle={400}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefetching}
+                  onRefresh={refetch}
+                  tintColor={accentColor}
+                  colors={[accentColor]}
+                />
+              }
+            >
+              {chatTitles.map((chat) => (
+                <TouchableOpacity
+                  key={chat.session_id}
+                  style={[styles.listItem, { backgroundColor: "transparent" }]}
+                  onPress={() => handleChatPress(chat.session_id)}
+                  accessibilityLabel={`Open chat: ${chat.title}`}
+                  accessibilityRole="button"
                 >
-                  {chat.title || "Untitled Chat"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {isFetchingNextPage && (
-              <View style={styles.loadingFooter}>
-                <ActivityIndicator size="small" color={accentColor} />
-              </View>
-            )}
-          </ScrollView>
-        )}
-      </View>
+                  <View style={styles.iconContainer}>
+                    <ChatIcon size={18} color={secondaryTextColor} />
+                  </View>
+                  <Text
+                    style={[styles.listItemText, { color: textColor }]}
+                    numberOfLines={1}
+                  >
+                    {chat.title || "Untitled Chat"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {isFetchingNextPage && (
+                <View style={styles.loadingFooter}>
+                  <ActivityIndicator size="small" color={accentColor} />
+                </View>
+              )}
+            </ScrollView>
+          )}
+        </View>
 
       {/* Agents Section */}
       <View style={styles.sectionContainer}>
@@ -219,7 +227,8 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         </ScrollView>
       </View>
     </View>
-  );
+    );
+  };
 
   const renderNotificationsTab = () => (
     <ScrollView
@@ -518,6 +527,9 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  sectionFlex: {
+    flex: 1,
   },
   sectionContainer: {
     flex: 1,

@@ -15,8 +15,6 @@ import { clearStoredJwt } from '../../api';
 import { SlideoutDrawer } from '../common';
 import {
   CloseIcon,
-  UserIcon,
-  BriefcaseIcon,
   MapPinIcon,
   BuildingIcon,
   HashIcon,
@@ -270,46 +268,38 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Section */}
+        {/* Profile Section - matches web app: Avatar + Name + Job Title */}
         <View style={styles.profileSection}>
           {renderAvatar('large')}
           {isLoadingUser ? (
             <ActivityIndicator size="small" color={accentColor} style={styles.loadingIndicator} />
           ) : (
-            <Text style={[styles.profileName, { color: textColor }]}>
-              {truncateName(fullName) || 'User'}
-            </Text>
-          )}
-          {userInfo?.email && (
-            <Text style={[styles.profileEmail, { color: secondaryText }]}>
-              {userInfo.email}
-            </Text>
+            <>
+              <Text style={[styles.profileName, { color: textColor }]}>
+                {truncateName(fullName) || 'User'}
+              </Text>
+              {userInfo?.jobTitle && (
+                <Text style={[styles.profileJobTitle, { color: secondaryText }]}>
+                  {userInfo.jobTitle}
+                </Text>
+              )}
+            </>
           )}
         </View>
 
-        {/* Account Section */}
+        {/* Account Section - matches web app: Location, BU, GGID */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: secondaryText }]}>Account</Text>
           <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
             {renderAccountItem(
-              <UserIcon size={20} color={accentColor} />,
-              'Name',
-              fullName
-            )}
-            {renderAccountItem(
-              <BriefcaseIcon size={20} color={accentColor} />,
-              'Job Title',
-              userInfo?.jobTitle
-            )}
-            {renderAccountItem(
               <MapPinIcon size={20} color={accentColor} />,
               'Location',
-              userInfo?.officeLocation || userInfo?.country
+              userInfo?.country
             )}
             {renderAccountItem(
               <BuildingIcon size={20} color={accentColor} />,
-              'Business Unit',
-              userInfo?.groups?.[0]
+              'BU',
+              userInfo?.BU
             )}
             {renderAccountItem(
               <HashIcon size={20} color={accentColor} />,
@@ -452,6 +442,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginTop: 12,
+  },
+  profileJobTitle: {
+    fontSize: 14,
+    marginTop: 4,
   },
   profileEmail: {
     fontSize: 14,

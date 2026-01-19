@@ -8,4 +8,5 @@ export interface UserInfo {
   officeLocation?: string;
   jobTitle?: string;
   ggid?: string;
+  BU?: string;
 }
