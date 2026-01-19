@@ -235,6 +235,25 @@ export const GlobeIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' })
   </Svg>
 );
 
+export const LinkIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 // Feedback icons
 export const CopyIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -337,6 +356,71 @@ export const CheckIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' })
       d="M20 6L9 17l-5-5"
       stroke={color}
       strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Source icon - matches web app's source-icon.svg
+export const SourceIcon: React.FC<IconProps> = ({ size = 16 }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <G strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5">
+      <Path
+        stroke="#005786"
+        d="M6 2H2.667A.667.667 0 0 0 2 2.667V6c0 .368.298.667.667.667H6A.667.667 0 0 0 6.667 6V2.667A.667.667 0 0 0 6 2ZM6 9.333H2.667A.667.667 0 0 0 2 10v3.333c0 .368.298.667.667.667H6a.667.667 0 0 0 .667-.667V10A.667.667 0 0 0 6 9.333Z"
+      />
+      <Path
+        stroke="#2B88BA"
+        d="M9.333 2.667H14M9.333 6H14M9.333 10H14M9.333 13.333H14"
+      />
+    </G>
+  </Svg>
+);
+
+// Google logo - matches web app's google-logo.svg
+export const GoogleLogo: React.FC<IconProps> = ({ size = 12 }) => (
+  <Svg width={size} height={size} viewBox="0 0 12 12" fill="none">
+    <Path
+      fill="#FBC02D"
+      d="M10.902 5.02h-.403V5H6v2h2.826a2.999 2.999 0 1 1-2.826-4c.765 0 1.46.288 1.99.76l1.415-1.414A4.977 4.977 0 0 0 5.999 1a5 5 0 1 0 4.903 4.02Z"
+    />
+    <Path
+      fill="#E53935"
+      d="M1.576 3.673 3.22 4.878A2.999 2.999 0 0 1 5.999 3c.766 0 1.461.288 1.991.76l1.414-1.414A4.977 4.977 0 0 0 6 1a4.997 4.997 0 0 0-4.424 2.673Z"
+    />
+    <Path
+      fill="#4CAF50"
+      d="M6.001 11a4.977 4.977 0 0 0 3.352-1.298l-1.547-1.31A2.977 2.977 0 0 1 6 9c-1.3 0-2.405-.83-2.82-1.986L1.55 8.27A4.996 4.996 0 0 0 6 11Z"
+    />
+    <Path
+      fill="#1565C0"
+      d="M10.903 5.02 10.899 5H6v2h2.826a3.01 3.01 0 0 1-1.022 1.393l1.548 1.309C9.242 9.802 11 8.5 11 6c0-.335-.034-.662-.097-.98Z"
+    />
+  </Svg>
+);
+
+// File spreadsheet icon - used in source modal (matches lucide FileSpreadsheet)
+export const FileSpreadsheetIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 2v6h6"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M8 13h2M8 17h2M12 13h4M12 17h4"
+      stroke={color}
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />

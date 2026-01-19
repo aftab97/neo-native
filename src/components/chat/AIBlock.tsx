@@ -19,6 +19,7 @@ import { ChartViewer } from './ChartViewer';
 import { AIMessageImages, isImageFile } from './AIMessageImages';
 import { AIMessageAttachments } from './AIMessageAttachments';
 import { ChatAIFeedback } from './ChatAIFeedback';
+import { SourcesPills } from './SourcesPills';
 import { CloseIcon } from '../icons';
 
 interface AIBlockProps {
@@ -377,6 +378,11 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
           No response
         </Text>
+      )}
+
+      {/* Sources and suggested search pills */}
+      {message.metadata && !isLoading && (
+        <SourcesPills metadata={message.metadata} />
       )}
 
       {/* Feedback actions (only for AI messages with content, not for live chat agents) */}

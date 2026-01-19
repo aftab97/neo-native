@@ -177,6 +177,7 @@ export const useMutateChatPrompt = () => {
       let accumulatedMessage = "";
       let accumulatedStatus: string[] = [];
       let accumulatedContents: any[] = [];
+      let accumulatedMetadata: Record<string, unknown> = {};
       let isCompleted = false; // Guard against double-completion
 
       return new Promise((resolve, reject) => {
@@ -291,6 +292,11 @@ export const useMutateChatPrompt = () => {
                 accumulatedContents = [...accumulatedContents, ...parsed.contents];
               }
 
+              // Accumulate metadata (sources, suggested_search, etc.)
+              if (parsed.metadata && Object.keys(parsed.metadata).length > 0) {
+                accumulatedMetadata = { ...accumulatedMetadata, ...parsed.metadata };
+              }
+
               // Update the AI message in cache - this triggers React re-render
               queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
                 const updated = [...old];
@@ -304,6 +310,7 @@ export const useMutateChatPrompt = () => {
                     contents: accumulatedContents.length > 0 ? accumulatedContents : undefined,
                     suggestedAgents: parsed.suggestedAgents || updated[lastIndex].suggestedAgents,
                     isLiveChatStart: parsed.isLiveChatStart || updated[lastIndex].isLiveChatStart,
+                    metadata: Object.keys(accumulatedMetadata).length > 0 ? accumulatedMetadata : updated[lastIndex].metadata,
                   };
                 }
 

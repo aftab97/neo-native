@@ -7,9 +7,6 @@ import {
   Keyboard,
   Platform,
   Text,
-  Modal,
-  Pressable,
-  KeyboardEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../store';
@@ -218,26 +215,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Attachment Slideout Modal */}
-      <Modal
+      {/* Attachment Slideout - uses shared SlideoutDrawer component */}
+      <AttachmentSlideout
         visible={showAttachmentSlideout}
-        transparent
-        animationType="none"
-        onRequestClose={() => setShowAttachmentSlideout(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowAttachmentSlideout(false)}
-        >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <AttachmentSlideout
-              visible={showAttachmentSlideout}
-              onClose={() => setShowAttachmentSlideout(false)}
-              isLiveChatActive={isLiveChatActive}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setShowAttachmentSlideout(false)}
+        isLiveChatActive={isLiveChatActive}
+      />
     </View>
   );
 };
@@ -285,10 +268,5 @@ const styles = StyleSheet.create({
   buttonIcon: {
     fontSize: 18,
     fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
   },
 });

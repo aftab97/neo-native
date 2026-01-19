@@ -16,6 +16,7 @@ interface ParsedChunk {
   agent?: string;
   error?: boolean;
   isLiveChatStart?: LiveChatStart | null;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -47,6 +48,7 @@ const extractMessageFromCallBackend = (chunk: string): {
   backend: string;
   tools?: any[];
   contents?: any[];
+  metadata?: Record<string, unknown>;
 } | null => {
   if (!chunk.includes('event: CALL_BACKEND')) return null;
 
@@ -65,8 +67,9 @@ const extractMessageFromCallBackend = (chunk: string): {
     const backend = json?.response?.backend || '';
     const tools = json?.response?.object?.tools || [];
     const contents = json?.response?.object?.contents || [];
+    const metadata = json?.response?.object?.metadata || {};
 
-    return { message, backend, tools, contents };
+    return { message, backend, tools, contents, metadata };
   } catch (error) {
     console.debug('Error parsing CALL_BACKEND chunk:', error);
     return null;
@@ -351,6 +354,10 @@ export const parseStreamChunk = (chunk: string): ParsedChunk | null => {
             url: img.content?.signedUrl || img.signedUrl || img.url,
           });
         }
+      }
+      // Include metadata (sources, suggested_search, etc.)
+      if (parsed.metadata && Object.keys(parsed.metadata).length > 0) {
+        result.metadata = parsed.metadata;
       }
     }
     return result;
