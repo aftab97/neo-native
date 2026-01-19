@@ -238,20 +238,9 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
           accessibilityState={{ selected: activeTab === "history" }}
         >
           <HistoryIcon
-            size={20}
+            size={22}
             color={activeTab === "history" ? accentColor : secondaryTextColor}
           />
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color:
-                  activeTab === "history" ? accentColor : secondaryTextColor,
-              },
-            ]}
-          >
-            History
-          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -269,7 +258,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         >
           <View style={styles.tabIconContainer}>
             <BellIcon
-              size={20}
+              size={22}
               color={
                 activeTab === "notifications" ? accentColor : secondaryTextColor
               }
@@ -284,34 +273,19 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
               </View>
             )}
           </View>
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color:
-                  activeTab === "notifications"
-                    ? accentColor
-                    : secondaryTextColor,
-              },
-            ]}
-          >
-            Alerts
-          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* New Chat Button - Only show on history tab */}
-      {activeTab === "history" && (
-        <TouchableOpacity
-          style={[styles.newChatButton, { backgroundColor: accentColor }]}
-          onPress={handleNewChat}
-          accessibilityLabel="Start new chat"
-          accessibilityRole="button"
-        >
-          <PlusIcon size={20} color="#ffffff" />
-          <Text style={styles.newChatText}>New Chat</Text>
-        </TouchableOpacity>
-      )}
+      {/* New Chat Button */}
+      <TouchableOpacity
+        style={[styles.newChatButton, { backgroundColor: accentColor }]}
+        onPress={handleNewChat}
+        accessibilityLabel="Start new chat"
+        accessibilityRole="button"
+      >
+        <PlusIcon size={20} color="#ffffff" />
+        <Text style={styles.newChatText}>New Chat</Text>
+      </TouchableOpacity>
 
       {/* Tab Content */}
       {activeTab === "history" ? renderHistoryTab() : renderNotificationsTab()}
@@ -357,10 +331,6 @@ const styles = StyleSheet.create({
   },
   tabIconContainer: {
     position: "relative",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "600",
   },
   badge: {
     position: "absolute",
