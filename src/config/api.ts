@@ -1,7 +1,7 @@
 // API Configuration
 // Configure based on environment - update these URLs for your BFF
 
-const DEV_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
+const DEV_API_URL = 'http://localhost:8090';
 const PROD_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
 
 export const API_BASE_URL = DEV_API_URL;
@@ -27,6 +27,9 @@ export const ENDPOINTS = {
 
   // Files
   PROCESS_FILE: '/api/v1/session/file/processFile',
+  FRONTEND_PROCESS_FILE: '/api/v1/session/file/frontendProcessFile',
+  UPLOAD_QUEUE: '/api/v1/session/upload/queue',
+  UPLOAD_LISTEN: '/api/v1/session/upload/listen',
 
   // Feedback
   FEEDBACK: '/api/v1/session/feedback',
@@ -36,4 +39,11 @@ export const ENDPOINTS = {
 
   // Daily News
   DAILY_NEWS: '/api/v1/session/getDailyNews',
+
+  // Notifications
+  NOTIFICATIONS: '/api/v1/session/getNotify',
+  GTD_NOTIFICATIONS: '/api/v1/session/getGtdNotifications',
+  REPLICON_TIMESHEETS: '/api/v1/session/getRepliconOpenTimesheets',
+  REPLICON_TIME_OFF: '/api/v1/session/getRepliconTimeOffWaitingForApproval',
+  VMS_APPROVALS: '/api/v1/session/getVMSApprovals',
 } as const;

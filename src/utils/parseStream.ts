@@ -381,8 +381,19 @@ export const createMessageId = (prefix: 'user' | 'ai' = 'user'): string => {
 };
 
 /**
- * Create a unique session ID
+ * Generate a UUID v4
+ */
+export const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+/**
+ * Create a unique session ID (UUID v4 format)
  */
 export const createSessionId = (): string => {
-  return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return generateUUID();
 };

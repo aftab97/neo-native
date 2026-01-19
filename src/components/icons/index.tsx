@@ -16,6 +16,11 @@ export { ChevronLeftIcon } from './CommonIcons';
 export { CloseIcon } from './CommonIcons';
 export { BellIcon } from './CommonIcons';
 export { HistoryIcon } from './CommonIcons';
+export { CameraIcon } from './CommonIcons';
+export { FileIcon } from './CommonIcons';
+export { SearchIcon } from './CommonIcons';
+export { ImageIcon } from './CommonIcons';
+export { GlobeIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

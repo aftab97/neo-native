@@ -5,3 +5,4 @@ export { useSessionStore } from './sessionStore';
 export { usePopupStore, type Toast, type Snackbar } from './popupStore';
 export { useRequestStore } from './requestStore';
 export { useNotificationStore } from './notificationStore';
+export { useFileStore, type FileAttachment, type FileErrorDetail } from './fileStore';

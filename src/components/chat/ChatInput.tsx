@@ -7,9 +7,14 @@ import {
   Keyboard,
   Platform,
   Text,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLayoutStore, useChatStore, useRequestStore } from '../../store';
+import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../store';
+import { PlusIcon } from '../icons';
+import { AttachmentSlideout } from './AttachmentSlideout';
+import { AttachmentPreview } from './AttachmentPreview';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -35,6 +40,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const inputRef = useRef<TextInput>(null);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { abortController } = useRequestStore();
+  const files = useFileStore((state) => state.files);
+  const removeAllFiles = useFileStore((state) => state.removeAllFiles);
 
   // Use store's inputValue only for initial/external values (e.g., suggestions)
   const storeInputValue = useChatStore((state) => state.inputValue);
@@ -43,6 +50,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   // Local state for the actual input - more reliable than global store
   const [localValue, setLocalValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [showAttachmentSlideout, setShowAttachmentSlideout] = useState(false);
 
   // Sync from store when it changes externally (e.g., suggestion clicked)
   useEffect(() => {
@@ -62,14 +70,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     ? '#3a424a'
     : '#e0e3e6';
   const accentColor = '#0158ab';
+  const inputBgColor = isDarkTheme ? '#3a424a' : '#f4f5f6';
 
   const hasText = localValue.trim().length > 0;
-  const canSend = hasText && !isLoading;
+  const hasFiles = files.length > 0;
+  const canSend = (hasText || hasFiles) && !isLoading;
   const isGenerating = isLoading && abortController;
 
   const handleSend = () => {
     const message = localValue.trim();
-    if (message && !isLoading) {
+    if ((message || hasFiles) && !isLoading) {
       // Route to live chat if active, otherwise use normal send
       if (isLiveChatActive && onLiveChatSend) {
         onLiveChatSend(message);
@@ -77,6 +87,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onSend(message);
       }
       setLocalValue(''); // Clear immediately
+      removeAllFiles(); // Clear files after sending
       Keyboard.dismiss();
     }
   };
@@ -94,6 +105,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setLocalValue(text);
   };
 
+  const toggleAttachmentSlideout = () => {
+    setShowAttachmentSlideout(!showAttachmentSlideout);
+    if (!showAttachmentSlideout) {
+      Keyboard.dismiss();
+    }
+  };
+
   return (
     <View
       style={[
@@ -101,15 +119,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         { paddingBottom: Math.max(insets.bottom, 8), backgroundColor },
       ]}
     >
+      {/* Attachment Preview */}
+      {hasFiles && <AttachmentPreview />}
+
       <View
         style={[
           styles.inputContainer,
           {
-            backgroundColor: isDarkTheme ? '#3a424a' : '#f4f5f6',
+            backgroundColor: inputBgColor,
             borderColor,
           },
         ]}
       >
+        {/* Plus Button */}
+        <TouchableOpacity
+          style={styles.plusButton}
+          onPress={toggleAttachmentSlideout}
+          accessibilityLabel="Add attachment"
+          accessibilityRole="button"
+        >
+          <PlusIcon size={22} color={isDarkTheme ? '#9ea6ae' : '#646b82'} />
+        </TouchableOpacity>
+
         <TextInput
           ref={inputRef}
           style={[styles.input, { color: textColor }]}
@@ -117,7 +148,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           placeholderTextColor={placeholderColor}
           value={localValue}
           onChangeText={handleChangeText}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => {
+            setIsFocused(true);
+            setShowAttachmentSlideout(false);
+          }}
           onBlur={() => setIsFocused(false)}
           onSubmitEditing={handleSend}
           multiline
@@ -153,6 +187,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Attachment Slideout Modal */}
+      <Modal
+        visible={showAttachmentSlideout}
+        transparent
+        animationType="none"
+        onRequestClose={() => setShowAttachmentSlideout(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowAttachmentSlideout(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <AttachmentSlideout
+              visible={showAttachmentSlideout}
+              onClose={() => setShowAttachmentSlideout(false)}
+              isLiveChatActive={isLiveChatActive}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -169,17 +224,25 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     borderRadius: 24,
     borderWidth: 2,
-    paddingLeft: 16,
+    paddingLeft: 6,
     paddingRight: 6,
     paddingVertical: 6,
     minHeight: 48,
     maxHeight: 150,
+  },
+  plusButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
     fontSize: 16,
     lineHeight: 22,
     paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    paddingHorizontal: 8,
     maxHeight: 120,
   },
   sendButton: {
@@ -188,10 +251,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
   },
   buttonIcon: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-end',
   },
 });

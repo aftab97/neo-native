@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.neonative"
+      "bundleIdentifier": "com.anonymous.neonative",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Neo needs access to your camera to take photos for upload.",
+        "NSPhotoLibraryUsageDescription": "Neo needs access to your photo library to select images for upload."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +34,22 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Neo needs access to your photos to attach images to messages.",
+          "cameraPermission": "Neo needs access to your camera to take photos."
+        }
+      ],
+      "expo-document-picker",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Neo needs access to your photos to show recent images.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
     ]
   }
 }
