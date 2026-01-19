@@ -42,6 +42,8 @@ export { BriefcaseIcon } from './CommonIcons';
 export { MapPinIcon } from './CommonIcons';
 export { BuildingIcon } from './CommonIcons';
 export { HashIcon } from './CommonIcons';
+export { EmailIcon } from './CommonIcons';
+export { PhoneIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

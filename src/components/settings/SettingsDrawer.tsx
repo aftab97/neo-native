@@ -18,6 +18,8 @@ import {
   MapPinIcon,
   BuildingIcon,
   HashIcon,
+  EmailIcon,
+  PhoneIcon,
   LanguageIcon,
   MoonIcon,
   SunIcon,
@@ -287,10 +289,20 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           )}
         </View>
 
-        {/* Account Section - matches web app: Location, BU, GGID */}
+        {/* Account Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: secondaryText }]}>Account</Text>
           <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
+            {renderAccountItem(
+              <EmailIcon size={20} color={accentColor} />,
+              'Email',
+              userInfo?.email
+            )}
+            {renderAccountItem(
+              <PhoneIcon size={20} color={accentColor} />,
+              'Phone',
+              undefined // Phone number not accessible from device for privacy reasons
+            )}
             {renderAccountItem(
               <MapPinIcon size={20} color={accentColor} />,
               'Location',
