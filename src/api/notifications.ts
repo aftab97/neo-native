@@ -3,7 +3,7 @@ import { apiFetchJson } from './fetch';
 import { ENDPOINTS } from '../config/api';
 import { Linking } from 'react-native';
 
-// Types
+// Types - matches web app variants
 export type NotificationVariant = 'blue' | 'yellow' | 'gray' | 'green' | 'purple';
 
 export interface ProcessedNotification {
@@ -32,8 +32,7 @@ const SERVICE_TAGS = {
   SERVICE_CENTRAL: 'ServiceCentral',
   CONCUR: 'Concur',
   SUCCESS_FACTOR: 'SuccessFactors',
-  REPLICON_TIMESHEET: 'Replicon Timesheet',
-  REPLICON_TIME_OFF: 'Replicon Time Off',
+  REPLICON: 'Replicon',
   VMS: 'VMS',
   ISOW: 'iSOW',
 } as const;
@@ -65,7 +64,12 @@ const notificationQueryConfig = {
   staleTime: 1000 * 60 * 5, // 5 minutes
   gcTime: 1000 * 60 * 30, // 30 minutes
   refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
-  retry: 2,
+  retry: 3,
+  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  // Refetch on mount if data is stale
+  refetchOnMount: true,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: true,
 };
 
 // Helper to pluralize approvals
@@ -75,7 +79,11 @@ const pluralizeApprovals = (count: number) => (count === 1 ? 'approval' : 'appro
 export const useGtdNotifications = () => {
   return useQuery<RawNotification[]>({
     queryKey: ['notifications', 'gtd'],
-    queryFn: () => apiFetchJson<RawNotification[]>(ENDPOINTS.GTD_NOTIFICATIONS),
+    queryFn: async () => {
+      const data = await apiFetchJson<RawNotification[]>(ENDPOINTS.GTD_NOTIFICATIONS);
+      console.log('[Notifications] GTD:', Array.isArray(data) ? data.length : 0, 'items');
+      return data;
+    },
     ...notificationQueryConfig,
   });
 };
@@ -85,7 +93,9 @@ const processGtdNotifications = (
   gtdData: RawNotification[] | undefined,
   lastFetchTime: Date
 ): ProcessedNotification[] => {
-  if (!gtdData || !Array.isArray(gtdData)) return [];
+  if (!gtdData || !Array.isArray(gtdData)) {
+    return [];
+  }
 
   const notifications = gtdData.filter((item) => item);
 
@@ -118,7 +128,11 @@ const processGtdNotifications = (
 export const useNotifyNotifications = () => {
   return useQuery<RawNotification[]>({
     queryKey: ['notifications', 'notify'],
-    queryFn: () => apiFetchJson<RawNotification[]>(ENDPOINTS.NOTIFICATIONS),
+    queryFn: async () => {
+      const data = await apiFetchJson<RawNotification[]>(ENDPOINTS.NOTIFICATIONS);
+      console.log('[Notifications] Notify:', Array.isArray(data) ? data.length : 0, 'items');
+      return data;
+    },
     ...notificationQueryConfig,
   });
 };
@@ -252,7 +266,9 @@ const processNotifyNotifications = (
   notifyData: RawNotification[] | undefined,
   lastFetchTime: Date
 ): ProcessedNotification[] => {
-  if (!notifyData || !Array.isArray(notifyData)) return [];
+  if (!notifyData || !Array.isArray(notifyData)) {
+    return [];
+  }
 
   const isowNotifications = notifyData.filter((item) => item.source === 'iSOW');
   const successFactorNotifications = notifyData.filter(
@@ -271,35 +287,115 @@ const processNotifyNotifications = (
   ];
 };
 
+// Replicon response type
+interface RepliconResponse {
+  d?: {
+    rows?: RepliconRow[];
+  };
+}
+
+interface RepliconRow {
+  cells?: RepliconCell[];
+}
+
+interface RepliconCell {
+  textValue?: string;
+  numberValue?: number;
+  slug?: string;
+  dateValue?: {
+    year: number;
+    month: number;
+    day: number;
+  };
+  dateRangeValue?: {
+    startDate?: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    endDate?: {
+      year: number;
+      month: number;
+      day: number;
+    };
+  };
+}
+
+// Helper to format date from Replicon
+const formatDateFromReplicon = (dateValue?: { year: number; month: number; day: number }): string => {
+  if (!dateValue) return '';
+  const { year, month, day } = dateValue;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 // Replicon Timesheet Hook
 export const useRepliconTimesheetNotifications = () => {
   return useQuery<ProcessedNotification[]>({
     queryKey: ['notifications', 'replicon-timesheet'],
     queryFn: async () => {
-      const data = await apiFetchJson<RawNotification[]>(ENDPOINTS.REPLICON_TIMESHEETS);
-      if (!data || !Array.isArray(data) || data.length === 0) return [];
+      const rawData = await apiFetchJson<RepliconResponse | RepliconRow[]>(ENDPOINTS.REPLICON_TIMESHEETS);
 
-      if (data.length > 1) {
+      // Handle both cases: data wrapped in d.rows OR data as direct array
+      let data: RepliconRow[] | undefined;
+      if (Array.isArray(rawData)) {
+        data = rawData;
+      } else {
+        data = (rawData as RepliconResponse)?.d?.rows;
+      }
+
+      console.log('[Notifications] Replicon Timesheet:', data?.length || 0, 'rows');
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return [];
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Filter only overdue timesheets (where today > endDate)
+      const notifications = data.filter((item) => {
+        const endDateObj = item?.cells?.[0]?.dateRangeValue?.endDate;
+        if (!endDateObj || !endDateObj.year || !endDateObj.month || !endDateObj.day) {
+          return false;
+        }
+        // Replicon month is 1-based, JS Date month is 0-based
+        const endDate = new Date(endDateObj.year, endDateObj.month - 1, endDateObj.day);
+        endDate.setHours(0, 0, 0, 0);
+        return today > endDate;
+      });
+
+      console.log('[Notifications] Replicon Timesheet overdue:', notifications.length);
+      if (notifications.length === 0) return [];
+
+      if (notifications.length > 1) {
         return [
           {
             id: AGGREGATED_IDS.REPLICON_TIMESHEET,
-            variant: 'blue' as NotificationVariant,
-            tag: SERVICE_TAGS.REPLICON_TIMESHEET,
-            description: `You have ${data.length} open timesheets in Replicon`,
+            variant: 'green' as NotificationVariant,
+            tag: SERVICE_TAGS.REPLICON,
+            description: `You have ${notifications.length} timesheet submissions pending in Replicon`,
             timestamp: new Date(),
             link: SERVICE_LINKS.REPLICON,
           },
         ];
       }
 
-      return data.map((item, index) => ({
-        id: item.id || `replicon-timesheet-${index}`,
-        variant: 'blue' as NotificationVariant,
-        tag: SERVICE_TAGS.REPLICON_TIMESHEET,
-        description: item.description || 'Open timesheet requires attention',
-        timestamp: new Date(),
-        link: item.link || SERVICE_LINKS.REPLICON,
-      }));
+      return notifications.map((item, index) => {
+        const dateEnd = formatDateFromReplicon(item.cells?.[3]?.dateValue);
+        const periodText = item.cells?.[0]?.textValue;
+        const workHours = item.cells?.[4]?.textValue;
+
+        return {
+          id: item.cells?.[2]?.slug || `replicon-timesheet-${index}`,
+          variant: 'green' as NotificationVariant,
+          tag: SERVICE_TAGS.REPLICON,
+          description: periodText && workHours
+            ? `Your timesheet for timeperiod ${periodText} is overdue with an expected work hours of ${workHours}`
+            : 'Replicon timesheet overdue',
+          timestamp: new Date(),
+          link: dateEnd ? `${SERVICE_LINKS.REPLICON}/${dateEnd}` : SERVICE_LINKS.REPLICON,
+        };
+      });
     },
     ...notificationQueryConfig,
   });
@@ -310,50 +406,86 @@ export const useRepliconTimeOffNotifications = () => {
   return useQuery<ProcessedNotification[]>({
     queryKey: ['notifications', 'replicon-timeoff'],
     queryFn: async () => {
-      const data = await apiFetchJson<RawNotification[]>(ENDPOINTS.REPLICON_TIME_OFF);
-      if (!data || !Array.isArray(data) || data.length === 0) return [];
+      const rawData = await apiFetchJson<RepliconResponse | RepliconRow[]>(ENDPOINTS.REPLICON_TIME_OFF);
 
-      if (data.length > 1) {
+      // Handle both cases: data wrapped in d.rows OR data as direct array
+      let data: RepliconRow[] | undefined;
+      if (Array.isArray(rawData)) {
+        data = rawData;
+      } else {
+        data = (rawData as RepliconResponse)?.d?.rows;
+      }
+
+      console.log('[Notifications] Replicon TimeOff:', data?.length || 0, 'rows');
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return [];
+      }
+
+      const notifications = data.filter((item) => item);
+      if (notifications.length === 0) return [];
+
+      if (notifications.length > 1) {
         return [
           {
             id: AGGREGATED_IDS.REPLICON_TIME_OFF,
-            variant: 'purple' as NotificationVariant,
-            tag: SERVICE_TAGS.REPLICON_TIME_OFF,
-            description: `You have ${data.length} time off requests waiting for approval`,
+            variant: 'green' as NotificationVariant,
+            tag: SERVICE_TAGS.REPLICON,
+            description: `You have ${notifications.length} time off approvals pending in Replicon`,
             timestamp: new Date(),
             link: SERVICE_LINKS.REPLICON,
           },
         ];
       }
 
-      return data.map((item, index) => ({
-        id: item.id || `replicon-timeoff-${index}`,
-        variant: 'purple' as NotificationVariant,
-        tag: SERVICE_TAGS.REPLICON_TIME_OFF,
-        description: item.description || 'Time off request waiting for approval',
-        timestamp: new Date(),
-        link: item.link || SERVICE_LINKS.REPLICON,
-      }));
+      return notifications.map((item, index) => {
+        const ownerName = item.cells?.[0]?.textValue?.replace(/\s*\(\d+\)/, '') || '';
+        const startDate = item.cells?.[1]?.textValue || '';
+        const totalDays = item.cells?.[4]?.textValue || '';
+        const numDays = item.cells?.[4]?.numberValue || 0;
+        const dayWord = numDays > 1 ? 'days' : 'day';
+
+        return {
+          id: item.cells?.[5]?.textValue || `replicon-timeoff-${index}`,
+          variant: 'green' as NotificationVariant,
+          tag: SERVICE_TAGS.REPLICON,
+          description: ownerName && startDate
+            ? `${ownerName} is requesting a leave approval for the time period from ${startDate} with a total of ${totalDays} ${dayWord}`
+            : 'Replicon time off approval request waiting for you',
+          timestamp: new Date(),
+          link: SERVICE_LINKS.REPLICON,
+        };
+      });
     },
     ...notificationQueryConfig,
   });
 };
+
+// VMS Approval data type
+interface VmsApprovalNotification {
+  id?: string;
+  subcontractorName?: string;
+  sourceLink?: string;
+}
 
 // VMS Approvals Hook
 export const useVmsApprovalsNotifications = () => {
   return useQuery<ProcessedNotification[]>({
     queryKey: ['notifications', 'vms'],
     queryFn: async () => {
-      const data = await apiFetchJson<RawNotification[]>(ENDPOINTS.VMS_APPROVALS);
-      if (!data || !Array.isArray(data) || data.length === 0) return [];
+      const data = await apiFetchJson<VmsApprovalNotification[]>(ENDPOINTS.VMS_APPROVALS);
+      console.log('[Notifications] VMS:', Array.isArray(data) ? data.length : 0, 'approvals');
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return [];
+      }
 
       if (data.length > 1) {
         return [
           {
             id: AGGREGATED_IDS.VMS,
-            variant: 'yellow' as NotificationVariant,
+            variant: 'blue' as NotificationVariant,
             tag: SERVICE_TAGS.VMS,
-            description: `You have ${data.length} ${pluralizeApprovals(data.length)} pending in VMS`,
+            description: `You have ${data.length} VMS approvals pending`,
             timestamp: new Date(),
             link: SERVICE_LINKS.VMS,
           },
@@ -362,11 +494,13 @@ export const useVmsApprovalsNotifications = () => {
 
       return data.map((item, index) => ({
         id: item.id || `vms-${index}`,
-        variant: 'yellow' as NotificationVariant,
+        variant: 'blue' as NotificationVariant,
         tag: SERVICE_TAGS.VMS,
-        description: item.description || item.title || 'VMS approval pending',
+        description: item.subcontractorName
+          ? `The timesheet of subcontractor ${item.subcontractorName} needs to be reviewed and approved`
+          : 'VMS approval pending',
         timestamp: new Date(),
-        link: item.link || SERVICE_LINKS.VMS,
+        link: item.sourceLink || SERVICE_LINKS.VMS,
       }));
     },
     ...notificationQueryConfig,
@@ -376,7 +510,7 @@ export const useVmsApprovalsNotifications = () => {
 // ============================================
 // MOCK DATA FOR TESTING - Remove when backend is ready
 // ============================================
-const USE_MOCK_DATA = true; // Set to false to use real API
+const USE_MOCK_DATA = false; // Set to false to use real API
 
 const MOCK_NOTIFICATIONS: ProcessedNotification[] = [
   {
@@ -413,17 +547,17 @@ const MOCK_NOTIFICATIONS: ProcessedNotification[] = [
   },
   {
     id: 'mock-replicon-timesheet-1',
-    variant: 'blue',
-    tag: 'Replicon Timesheet',
-    description: 'You have 2 open timesheets that require attention.',
+    variant: 'green',
+    tag: SERVICE_TAGS.REPLICON,
+    description: 'Your timesheet for timeperiod Dec 30, 2024 - Jan 5, 2025 is overdue with an expected work hours of 40:00',
     timestamp: new Date(),
     link: 'https://na9.replicon.com/',
   },
   {
     id: 'mock-vms-1',
-    variant: 'yellow',
+    variant: 'blue',
     tag: 'VMS',
-    description: 'Contract extension approval needed for vendor ABC Consulting.',
+    description: 'The timesheet of subcontractor ABC Consulting needs to be reviewed and approved',
     timestamp: new Date(),
     link: 'https://fieldglass.com',
   },
@@ -469,39 +603,45 @@ export const useNotifications = () => {
   const hasError = queries.some((q) => q.query.error);
   const isRefetching = queries.some((q) => q.query.isRefetching);
 
-  // Process and combine all notifications
+  // Process and combine all notifications - include data from any query that has it
+  // (don't require !isLoading, so we can show cached data even during refetch)
   const processedNotifications: ProcessedNotification[] = [];
 
-  // Process GTD
-  if (gtdQuery.data && !gtdQuery.isLoading) {
+  // Process GTD (only if we have data)
+  if (gtdQuery.data) {
     const fetchTime = gtdQuery.dataUpdatedAt
       ? new Date(gtdQuery.dataUpdatedAt)
       : new Date();
-    processedNotifications.push(...processGtdNotifications(gtdQuery.data, fetchTime));
+    const gtdProcessed = processGtdNotifications(gtdQuery.data, fetchTime);
+    processedNotifications.push(...gtdProcessed);
   }
 
   // Process Notify (aggregated source)
-  if (notifyQuery.data && !notifyQuery.isLoading) {
+  if (notifyQuery.data) {
     const fetchTime = notifyQuery.dataUpdatedAt
       ? new Date(notifyQuery.dataUpdatedAt)
       : new Date();
-    processedNotifications.push(...processNotifyNotifications(notifyQuery.data, fetchTime));
+    const notifyProcessed = processNotifyNotifications(notifyQuery.data, fetchTime);
+    processedNotifications.push(...notifyProcessed);
   }
 
   // Process Replicon Timesheet
-  if (repliconTimesheetQuery.data && !repliconTimesheetQuery.isLoading) {
+  if (repliconTimesheetQuery.data) {
     processedNotifications.push(...repliconTimesheetQuery.data);
   }
 
   // Process Replicon Time Off
-  if (repliconTimeOffQuery.data && !repliconTimeOffQuery.isLoading) {
+  if (repliconTimeOffQuery.data) {
     processedNotifications.push(...repliconTimeOffQuery.data);
   }
 
   // Process VMS
-  if (vmsApprovalsQuery.data && !vmsApprovalsQuery.isLoading) {
+  if (vmsApprovalsQuery.data) {
     processedNotifications.push(...vmsApprovalsQuery.data);
   }
+
+  // Debug log (can be removed later)
+  console.log('[Notifications] Combined:', processedNotifications.length, 'notifications');
 
   const refetch = () => {
     gtdQuery.refetch();

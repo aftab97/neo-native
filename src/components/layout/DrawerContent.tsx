@@ -53,6 +53,11 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
     (notification) => !dismissedIds.has(notification.id)
   );
 
+  // Debug logging for notifications
+  if (visibleNotifications.length > 0 || isLoadingNotifications) {
+    console.log('[DrawerContent] Notifications:', visibleNotifications.length, 'visible,', isLoadingNotifications ? 'loading...' : 'loaded');
+  }
+
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>("history");
 
@@ -401,7 +406,7 @@ const styles = StyleSheet.create({
   },
   notificationsContainer: {
     padding: 16,
-    gap: 12,
+    gap: 16,
   },
   centerContent: {
     flex: 1,
