@@ -30,6 +30,8 @@ interface SlideoutDrawerProps {
   expandable?: boolean;
   /** Whether to show the handle bar. Defaults to true */
   showHandle?: boolean;
+  /** Whether dragging down closes the drawer (without expand functionality). Defaults to false */
+  dragToClose?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
   maxHeightPercent = 0.8,
   expandable = true,
   showHandle = true,
+  dragToClose = false,
 }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
@@ -59,6 +62,9 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
   const expandY = useRef(new Animated.Value(EXPAND_DISTANCE)).current;
   const basePosition = useRef(EXPAND_DISTANCE);
 
+  // Drag-to-close animation state
+  const dragY = useRef(new Animated.Value(0)).current;
+
   // Theme colors
   const backgroundColor = isDarkTheme ? colors.gray['900'] : colors.gray['000'];
   const borderColor = isDarkTheme ? colors.gray['700'] : colors.gray['200'];
@@ -71,6 +77,9 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
       expandY.setValue(EXPAND_DISTANCE);
       basePosition.current = EXPAND_DISTANCE;
       setIsExpanded(false);
+
+      // Reset drag-to-close state
+      dragY.setValue(0);
 
       Animated.spring(slideAnim, {
         toValue: 1,
@@ -87,7 +96,7 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
     }
   }, [visible]);
 
-  // Handle pan gesture for dragging the drawer
+  // Handle pan gesture for dragging the drawer (expandable mode)
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationY: expandY } }],
     { useNativeDriver: true }
@@ -104,12 +113,12 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
     }
 
     if (state === State.END || state === State.CANCELLED) {
-      const { translationY: dragY, velocityY } = event.nativeEvent;
+      const { translationY: transY, velocityY } = event.nativeEvent;
 
       expandY.flattenOffset();
 
-      const isDraggingDown = dragY > SNAP_THRESHOLD || velocityY > 500;
-      const isDraggingUp = dragY < -SNAP_THRESHOLD || velocityY < -500;
+      const isDraggingDown = transY > SNAP_THRESHOLD || velocityY > 500;
+      const isDraggingUp = transY < -SNAP_THRESHOLD || velocityY < -500;
 
       // If at default position and dragging down → close
       if (isDraggingDown && !isExpanded) {
@@ -129,7 +138,7 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
       } else if (isDraggingDown && isExpanded) {
         targetValue = EXPAND_DISTANCE;
       } else {
-        const currentPosition = Math.max(0, Math.min(EXPAND_DISTANCE, basePosition.current + dragY));
+        const currentPosition = Math.max(0, Math.min(EXPAND_DISTANCE, basePosition.current + transY));
         targetValue = currentPosition < EXPAND_DISTANCE / 2 ? 0 : EXPAND_DISTANCE;
       }
 
@@ -145,25 +154,74 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
     }
   };
 
+  // Handle pan gesture for drag-to-close mode (simpler - just close on drag down)
+  const onDragToCloseGestureEvent = Animated.event(
+    [{ nativeEvent: { translationY: dragY } }],
+    { useNativeDriver: true }
+  );
+
+  const onDragToCloseStateChange = (event: PanGestureHandlerGestureEvent) => {
+    const { state, translationY, velocityY } = event.nativeEvent;
+
+    if (state === State.END || state === State.CANCELLED) {
+      const isDraggingDown = translationY > SNAP_THRESHOLD || velocityY > 500;
+
+      if (isDraggingDown) {
+        // Close the drawer
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          onClose();
+        });
+      } else {
+        // Snap back to original position
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 80,
+          friction: 12,
+        }).start();
+      }
+    }
+  };
+
   if (!visible) return null;
 
   // Slide animation - drawer slides up from bottom
   const slideTranslateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [DEFAULT_HEIGHT, 0],
+    outputRange: [MAX_HEIGHT, 0],
   });
 
-  // Combine slide animation with expand position
-  const combinedTranslateY = expandable
-    ? Animated.add(
-        slideTranslateY,
-        expandY.interpolate({
-          inputRange: [0, EXPAND_DISTANCE],
-          outputRange: [0, EXPAND_DISTANCE],
-          extrapolate: 'clamp',
-        })
-      )
-    : slideTranslateY;
+  // Combine slide animation with expand position or drag-to-close
+  let combinedTranslateY: Animated.AnimatedInterpolation<number> | Animated.AnimatedAddition<number>;
+
+  if (dragToClose) {
+    // For drag-to-close: just add the drag offset (clamped to positive values only)
+    combinedTranslateY = Animated.add(
+      slideTranslateY,
+      dragY.interpolate({
+        inputRange: [-MAX_HEIGHT, 0, MAX_HEIGHT],
+        outputRange: [0, 0, MAX_HEIGHT],
+        extrapolate: 'clamp',
+      })
+    );
+  } else if (expandable && EXPAND_DISTANCE > 0) {
+    // For expandable: combine slide with expand animation
+    combinedTranslateY = Animated.add(
+      slideTranslateY,
+      expandY.interpolate({
+        inputRange: [0, EXPAND_DISTANCE],
+        outputRange: [0, EXPAND_DISTANCE],
+        extrapolate: 'clamp',
+      })
+    );
+  } else {
+    // Non-expandable: just use slide animation
+    combinedTranslateY = slideTranslateY;
+  }
 
   const drawerContent = (
     <Animated.View
@@ -201,7 +259,15 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
 
         {/* Drawer - positioned at bottom */}
         <View style={styles.drawerContainer} pointerEvents="box-none">
-          {expandable ? (
+          {dragToClose ? (
+            <PanGestureHandler
+              onGestureEvent={onDragToCloseGestureEvent}
+              onHandlerStateChange={onDragToCloseStateChange}
+              activeOffsetY={[-10, 10]}
+            >
+              {drawerContent}
+            </PanGestureHandler>
+          ) : expandable ? (
             <PanGestureHandler
               onGestureEvent={onGestureEvent}
               onHandlerStateChange={onHandlerStateChange}

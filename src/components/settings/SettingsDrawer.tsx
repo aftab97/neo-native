@@ -255,6 +255,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       onClose={onClose}
       maxHeightPercent={0.92}
       expandable={false}
+      dragToClose={true}
     >
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
