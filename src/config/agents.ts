@@ -156,6 +156,41 @@ export const AGENTS: AgentMetadata[] = [
     description: 'General utilities and tools',
     iconType: 'rfp-proposal',
   },
+  {
+    id: AGENT_NAMES.FinancePnLGbi,
+    name: 'FinancePnLGbi',
+    label: 'Finance Analyst - P&L (GBI)',
+    description: 'Profit and loss analysis using GBI data sources',
+    iconType: 'analyst',
+  },
+  {
+    id: AGENT_NAMES.FinancePnLHfm,
+    name: 'FinancePnLHfm',
+    label: 'Finance Analyst - P&L (HFM)',
+    description: 'Profit and loss analysis using HFM data sources',
+    iconType: 'analyst',
+  },
+  {
+    id: AGENT_NAMES.FinanceRevenueGbi,
+    name: 'FinanceRevenueGbi',
+    label: 'Finance Analyst - Revenue (GBI)',
+    description: 'Revenue analysis and reporting using GBI data sources',
+    iconType: 'analyst',
+  },
+  {
+    id: AGENT_NAMES.FinanceRevenuePbcs,
+    name: 'FinanceRevenuePbcs',
+    label: 'Finance Analyst - Revenue (PBCS)',
+    description: 'Revenue analysis and reporting using PBCS data sources',
+    iconType: 'analyst',
+  },
+  {
+    id: AGENT_NAMES.SalesDataGbi,
+    name: 'SalesDataGbi',
+    label: 'Sales Data Analyst (GBI)',
+    description: 'Sales data analysis and insights using GBI data sources',
+    iconType: 'analyst',
+  },
 ];
 
 // Get agent by ID

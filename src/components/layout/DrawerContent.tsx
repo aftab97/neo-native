@@ -135,7 +135,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
           Agents
         </Text>
-        {AGENTS.slice(0, 8).map((agent) => (
+        {AGENTS.map((agent) => (
           <TouchableOpacity
             key={agent.id}
             style={[

@@ -5,6 +5,7 @@ import { useLayoutStore } from '../../store';
 import { ChatMessage } from '../../types/chat';
 import { colors, codeColors } from '../../theme/colors';
 import { AdaptiveCardViewer } from './AdaptiveCardViewer';
+import { ChartViewer } from './ChartViewer';
 
 interface AIBlockProps {
   message: ChatMessage;
@@ -232,13 +233,11 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
           </Markdown>
         );
       } else if (res.type === 'chart' && res.spec) {
-        // TODO: Implement chart rendering
         return (
-          <View key={`chart-${idx}`} style={styles.chartPlaceholder}>
-            <Text style={{ color: secondaryTextColor }}>
-              Chart visualization not yet supported in mobile
-            </Text>
-          </View>
+          <ChartViewer
+            key={`chart-${idx}`}
+            spec={res.spec}
+          />
         );
       }
       return null;
