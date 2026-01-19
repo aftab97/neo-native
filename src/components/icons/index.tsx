@@ -32,6 +32,16 @@ export { CheckIcon } from './CommonIcons';
 export { SourceIcon } from './CommonIcons';
 export { GoogleLogo } from './CommonIcons';
 export { FileSpreadsheetIcon } from './CommonIcons';
+export { SettingsIcon } from './CommonIcons';
+export { ChevronRightIcon } from './CommonIcons';
+export { LogoutIcon } from './CommonIcons';
+export { TrashIcon } from './CommonIcons';
+export { LanguageIcon } from './CommonIcons';
+export { UserIcon } from './CommonIcons';
+export { BriefcaseIcon } from './CommonIcons';
+export { MapPinIcon } from './CommonIcons';
+export { BuildingIcon } from './CommonIcons';
+export { HashIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

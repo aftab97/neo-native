@@ -7,6 +7,7 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
@@ -17,7 +18,7 @@ import {
   useNotificationStore,
 } from "../../store";
 import { useResetChat } from "../../hooks";
-import { useGetChatTitles, useNotifications } from "../../api";
+import { useGetChatTitles, useNotifications, useGetUser, useGetProfilePicture } from "../../api";
 import { AGENTS } from "../../config/agents";
 import {
   PlusIcon,
@@ -26,8 +27,10 @@ import {
   NeoLogo,
   BellIcon,
   HistoryIcon,
+  ChevronRightIcon,
 } from "../icons";
 import { NotificationCard } from "../notifications";
+import { SettingsDrawer } from "../settings";
 import { colors } from "../../theme/colors";
 
 type TabType = "history" | "notifications";
@@ -62,6 +65,10 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
     (notification) => !dismissedIds.has(notification.id)
   );
 
+  // User info for footer
+  const { data: userInfo } = useGetUser();
+  const { data: profilePictureData } = useGetProfilePicture();
+
   // Debug logging for notifications
   if (visibleNotifications.length > 0 || isLoadingNotifications) {
     console.log('[DrawerContent] Notifications:', visibleNotifications.length, 'visible,', isLoadingNotifications ? 'loading...' : 'loaded');
@@ -69,6 +76,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
 
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>("history");
+  const [showSettings, setShowSettings] = useState(false);
 
   // Theme colors
   const backgroundColor = isDarkTheme
@@ -341,14 +349,104 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
       {/* Tab Content */}
       {activeTab === "history" ? renderHistoryTab() : renderNotificationsTab()}
 
-      {/* Footer */}
-      <View style={[styles.footer, { borderTopColor: borderColor }]}>
-        <Text style={[styles.footerText, { color: secondaryTextColor }]}>
-          Neo Mobile v1.0.0
-        </Text>
-      </View>
+      {/* Footer - Profile trigger for settings */}
+      <TouchableOpacity
+        style={[styles.footer, { borderTopColor: borderColor }]}
+        onPress={() => setShowSettings(true)}
+        activeOpacity={0.7}
+        accessibilityLabel="Open settings"
+        accessibilityRole="button"
+      >
+        <View style={styles.footerContent}>
+          {/* Profile Picture */}
+          {profilePictureData?.profilePicture ? (
+            <Image
+              source={{ uri: profilePictureData.profilePicture }}
+              style={styles.footerAvatar}
+            />
+          ) : (
+            <View
+              style={[
+                styles.footerAvatarFallback,
+                {
+                  backgroundColor: isDarkTheme
+                    ? colors.gray["700"]
+                    : colors.blue["100"],
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.footerAvatarText,
+                  {
+                    color: isDarkTheme
+                      ? colors.gray["200"]
+                      : colors.gray["700"],
+                  },
+                ]}
+              >
+                {getInitials(
+                  `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim() ||
+                    undefined,
+                  userInfo?.email
+                )}
+              </Text>
+            </View>
+          )}
+
+          {/* Name */}
+          <Text
+            style={[styles.footerName, { color: textColor }]}
+            numberOfLines={1}
+          >
+            {truncateName(formatName(userInfo?.firstname, userInfo?.lastname)) ||
+              "User"}
+          </Text>
+
+          {/* Chevron */}
+          <ChevronRightIcon size={20} color={secondaryTextColor} />
+        </View>
+      </TouchableOpacity>
+
+      {/* Settings Drawer */}
+      <SettingsDrawer
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </View>
   );
+};
+
+/**
+ * Get initials from name or email
+ */
+const getInitials = (name?: string, fallbackEmail?: string): string => {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    return parts.length === 1
+      ? parts[0].slice(0, 2).toUpperCase()
+      : (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return fallbackEmail ? fallbackEmail.slice(0, 2).toUpperCase() : "";
+};
+
+/**
+ * Format name: First letter uppercase, rest lowercase
+ */
+const formatName = (firstname?: string, lastname?: string): string => {
+  const formatPart = (part?: string): string => {
+    if (!part) return "";
+    return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+  };
+  return `${formatPart(firstname)} ${formatPart(lastname)}`.trim();
+};
+
+/**
+ * Truncate name with ellipsis if too long
+ */
+const truncateName = (name: string, maxLength: number = 18): string => {
+  if (name.length <= maxLength) return name;
+  return name.slice(0, maxLength - 3) + "..."
 };
 
 const styles = StyleSheet.create({
@@ -482,11 +580,34 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
   },
   footer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
+  },
+  footerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  footerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+  },
+  footerAvatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+    justifyContent: "center",
     alignItems: "center",
   },
-  footerText: {
-    fontSize: 12,
+  footerAvatarText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  footerName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

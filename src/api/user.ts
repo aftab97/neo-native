@@ -14,3 +14,18 @@ export const useGetUser = () => {
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
 };
+
+interface ProfilePictureResponse {
+  profilePicture: string;
+}
+
+/**
+ * Fetch user profile picture
+ */
+export const useGetProfilePicture = () => {
+  return useQuery({
+    queryKey: ['userProfilePicture'],
+    queryFn: () => apiFetchJson<ProfilePictureResponse>(ENDPOINTS.USER_PROFILE_PICTURE),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+};

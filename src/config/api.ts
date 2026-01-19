@@ -24,6 +24,7 @@ export const ENDPOINTS = {
 
   // User
   USER_INFO: '/api/v1/session/userinfo',
+  USER_PROFILE_PICTURE: '/api/v1/session/userProfilePicture',
 
   // Files
   PROCESS_FILE: '/api/v1/session/file/processFile',

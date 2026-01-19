@@ -1,6 +1,6 @@
 export { apiFetch, apiFetchJson, addRequestInterceptor, addResponseInterceptor } from './fetch';
 export { queryClient, queryKeys } from './queryClient';
-export { useGetUser } from './user';
+export { useGetUser, useGetProfilePicture } from './user';
 export {
   useGetChatTitles,
   useMutateChatHistory,

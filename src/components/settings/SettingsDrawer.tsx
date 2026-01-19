@@ -1,0 +1,565 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useLayoutStore } from '../../store';
+import { useGetUser, useGetProfilePicture, useDeleteAllChats } from '../../api';
+import { clearStoredJwt } from '../../api';
+import { SlideoutDrawer } from '../common';
+import {
+  CloseIcon,
+  UserIcon,
+  BriefcaseIcon,
+  MapPinIcon,
+  BuildingIcon,
+  HashIcon,
+  LanguageIcon,
+  MoonIcon,
+  SunIcon,
+  TrashIcon,
+  LogoutIcon,
+  ChevronRightIcon,
+} from '../icons';
+import { colors } from '../../theme/colors';
+
+interface SettingsDrawerProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+type ThemeType = 'light' | 'dark' | 'system';
+
+/**
+ * Get initials from name or email
+ */
+const getInitials = (name?: string, fallbackEmail?: string): string => {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    return parts.length === 1
+      ? parts[0].slice(0, 2).toUpperCase()
+      : (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return fallbackEmail ? fallbackEmail.slice(0, 2).toUpperCase() : '';
+};
+
+/**
+ * Format name: First letter uppercase, rest lowercase
+ */
+const formatName = (firstname?: string, lastname?: string): string => {
+  const formatPart = (part?: string): string => {
+    if (!part) return '';
+    return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+  };
+
+  const formatted = `${formatPart(firstname)} ${formatPart(lastname)}`.trim();
+  return formatted;
+};
+
+/**
+ * Truncate name with ellipsis if too long
+ */
+const truncateName = (name: string, maxLength: number = 20): string => {
+  if (name.length <= maxLength) return name;
+  return name.slice(0, maxLength - 3) + '...';
+};
+
+export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
+  visible,
+  onClose,
+}) => {
+  const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
+  const theme = useLayoutStore((state) => state.theme);
+  const setTheme = useLayoutStore((state) => state.setTheme);
+
+  const { data: userInfo, isLoading: isLoadingUser } = useGetUser();
+  const { data: profilePictureData } = useGetProfilePicture();
+  const deleteAllChatsMutation = useDeleteAllChats();
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Theme colors
+  const backgroundColor = isDarkTheme ? colors.gray['900'] : colors.gray['000'];
+  const textColor = isDarkTheme ? colors.gray['100'] : colors.gray['900'];
+  const secondaryText = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
+  const borderColor = isDarkTheme ? colors.gray['700'] : colors.gray['200'];
+  const surfaceColor = isDarkTheme ? colors.gray['800'] : colors.gray['100'];
+  const accentColor = colors.blue['700'];
+  const dangerColor = colors.red['500'];
+
+  const handleThemeChange = (newTheme: ThemeType) => {
+    setTheme(newTheme);
+  };
+
+  const handleDeleteAllChats = () => {
+    if (!userInfo?.email) {
+      Alert.alert('Error', 'Unable to delete chats. User info not available.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete All Chats',
+      'Are you sure you want to delete all your chat history? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteAllChatsMutation.mutateAsync({ userEmail: userInfo.email });
+              Alert.alert('Success', 'All chats have been deleted.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete chats. Please try again.');
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearStoredJwt();
+              // The app should handle navigation to login screen via auth state change
+            } catch (error) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const fullName = formatName(userInfo?.firstname, userInfo?.lastname);
+  const initials = getInitials(
+    `${userInfo?.firstname ?? ''} ${userInfo?.lastname ?? ''}`.trim() || undefined,
+    userInfo?.email
+  );
+
+  const renderAvatar = (size: 'small' | 'large' = 'large') => {
+    const avatarSize = size === 'large' ? 64 : 40;
+    const fontSize = size === 'large' ? 24 : 16;
+
+    if (profilePictureData?.profilePicture) {
+      return (
+        <Image
+          source={{ uri: profilePictureData.profilePicture }}
+          style={[
+            styles.avatar,
+            { width: avatarSize, height: avatarSize, borderRadius: avatarSize * 0.25 },
+          ]}
+        />
+      );
+    }
+
+    return (
+      <View
+        style={[
+          styles.avatarFallback,
+          {
+            width: avatarSize,
+            height: avatarSize,
+            borderRadius: avatarSize * 0.25,
+            backgroundColor: isDarkTheme ? colors.gray['700'] : colors.blue['100'],
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.avatarText,
+            {
+              fontSize,
+              color: isDarkTheme ? colors.gray['200'] : colors.gray['700'],
+            },
+          ]}
+        >
+          {initials}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderAccountItem = (
+    icon: React.ReactNode,
+    label: string,
+    value?: string
+  ) => (
+    <View style={styles.accountItem}>
+      <View style={[styles.accountIconWrapper, { backgroundColor: surfaceColor }]}>
+        {icon}
+      </View>
+      <View style={styles.accountItemContent}>
+        <Text style={[styles.accountLabel, { color: secondaryText }]}>{label}</Text>
+        <Text style={[styles.accountValue, { color: textColor }]} numberOfLines={1}>
+          {value || 'Not available'}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderThemeOption = (themeOption: ThemeType, label: string, icon: React.ReactNode) => {
+    const isSelected = theme === themeOption;
+    return (
+      <TouchableOpacity
+        style={[
+          styles.themeOption,
+          {
+            backgroundColor: isSelected ? accentColor : surfaceColor,
+            borderColor: isSelected ? accentColor : borderColor,
+          },
+        ]}
+        onPress={() => handleThemeChange(themeOption)}
+        activeOpacity={0.7}
+      >
+        {icon}
+        <Text
+          style={[
+            styles.themeOptionText,
+            { color: isSelected ? '#ffffff' : textColor },
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <SlideoutDrawer
+      visible={visible}
+      onClose={onClose}
+      maxHeightPercent={0.92}
+      expandable={false}
+    >
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: borderColor }]}>
+        <Text style={[styles.headerTitle, { color: textColor }]}>Settings</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <CloseIcon size={24} color={secondaryText} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          {renderAvatar('large')}
+          {isLoadingUser ? (
+            <ActivityIndicator size="small" color={accentColor} style={styles.loadingIndicator} />
+          ) : (
+            <Text style={[styles.profileName, { color: textColor }]}>
+              {truncateName(fullName) || 'User'}
+            </Text>
+          )}
+          {userInfo?.email && (
+            <Text style={[styles.profileEmail, { color: secondaryText }]}>
+              {userInfo.email}
+            </Text>
+          )}
+        </View>
+
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>Account</Text>
+          <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
+            {renderAccountItem(
+              <UserIcon size={20} color={accentColor} />,
+              'Name',
+              fullName
+            )}
+            {renderAccountItem(
+              <BriefcaseIcon size={20} color={accentColor} />,
+              'Job Title',
+              userInfo?.jobTitle
+            )}
+            {renderAccountItem(
+              <MapPinIcon size={20} color={accentColor} />,
+              'Location',
+              userInfo?.officeLocation || userInfo?.country
+            )}
+            {renderAccountItem(
+              <BuildingIcon size={20} color={accentColor} />,
+              'Business Unit',
+              userInfo?.groups?.[0]
+            )}
+            {renderAccountItem(
+              <HashIcon size={20} color={accentColor} />,
+              'GGID',
+              userInfo?.ggid
+            )}
+          </View>
+        </View>
+
+        {/* General Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>General</Text>
+          <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
+            {/* Language */}
+            <TouchableOpacity style={styles.settingsRow} activeOpacity={0.7}>
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <LanguageIcon size={20} color={accentColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>Language</Text>
+                <View style={styles.settingsRowRight}>
+                  <Text style={[styles.settingsValue, { color: secondaryText }]}>English</Text>
+                  <ChevronRightIcon size={20} color={secondaryText} />
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Theme */}
+            <View style={styles.themeSection}>
+              <View style={styles.themeLabelRow}>
+                <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                  {isDarkTheme ? (
+                    <MoonIcon size={20} color={accentColor} />
+                  ) : (
+                    <SunIcon size={20} color={accentColor} />
+                  )}
+                </View>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>Theme</Text>
+              </View>
+              <View style={styles.themeOptions}>
+                {renderThemeOption('light', 'Light', <SunIcon size={16} color={theme === 'light' ? '#ffffff' : textColor} />)}
+                {renderThemeOption('dark', 'Dark', <MoonIcon size={16} color={theme === 'dark' ? '#ffffff' : textColor} />)}
+                {renderThemeOption('system', 'System', <SettingsIcon size={16} color={theme === 'system' ? '#ffffff' : textColor} />)}
+              </View>
+            </View>
+
+            {/* Delete All Chats */}
+            <TouchableOpacity
+              style={styles.settingsRow}
+              onPress={handleDeleteAllChats}
+              activeOpacity={0.7}
+              disabled={isDeleting}
+            >
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <TrashIcon size={20} color={dangerColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: dangerColor }]}>
+                  Delete All Chats
+                </Text>
+                {isDeleting && (
+                  <ActivityIndicator size="small" color={dangerColor} />
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Logout */}
+            <TouchableOpacity
+              style={[styles.settingsRow, styles.lastRow]}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <LogoutIcon size={20} color={dangerColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: dangerColor }]}>Logout</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Version */}
+        <Text style={[styles.versionText, { color: secondaryText }]}>
+          Neo Mobile v1.0.0
+        </Text>
+      </ScrollView>
+    </SlideoutDrawer>
+  );
+};
+
+// Import SettingsIcon for theme option (avoiding circular dependency)
+const SettingsIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => (
+  <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: size * 0.6, height: size * 0.6, borderRadius: size * 0.3, borderWidth: 1.5, borderColor: color }} />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  avatar: {
+    resizeMode: 'cover',
+  },
+  avatarFallback: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontWeight: '500',
+  },
+  loadingIndicator: {
+    marginTop: 12,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  profileEmail: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  sectionContent: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  accountItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+  },
+  accountIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountItemContent: {
+    flex: 1,
+    gap: 2,
+  },
+  accountLabel: {
+    fontSize: 12,
+  },
+  accountValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+  },
+  lastRow: {
+    borderBottomWidth: 0,
+  },
+  settingsIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsRowContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settingsLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  settingsRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  settingsValue: {
+    fontSize: 14,
+  },
+  themeSection: {
+    padding: 12,
+  },
+  themeLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginLeft: 48,
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  themeOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 8,
+  },
+});
