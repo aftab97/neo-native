@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { useLayoutStore, useChatStore, useSessionStore } from "../store";
+import { useLayoutStore, useChatStore, useSessionStore, useFileStore } from "../store";
 import { useMutateChatPrompt, useGetUser } from "../api";
 import {
   WelcomeSection,
@@ -23,7 +23,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { setInputValue } = useChatStore();
-  const { setCurrentSessionId } = useSessionStore();
+  const { currentSessionId, setCurrentSessionId } = useSessionStore();
+  const files = useFileStore((state) => state.files);
   const { data: user } = useGetUser();
   const chatMutation = useMutateChatPrompt();
   const { resetForHomepage } = useResetChat();
@@ -31,18 +32,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
   const backgroundColor = isDarkTheme ? "#17191f" : "#eceef0";
 
   // Reset chat state when homepage is focused (navigating back or new chat)
+  // But only if there are no pending file uploads
   useFocusEffect(
     useCallback(() => {
-      resetForHomepage();
-    }, [resetForHomepage])
+      // Don't reset if user has files attached (they may have uploaded before typing)
+      if (files.length === 0) {
+        resetForHomepage();
+      }
+    }, [resetForHomepage, files.length])
   );
 
   const handleSend = (message: string) => {
-    const sessionId = createSessionId();
+    // Use existing session ID (from file uploads) or create a new one
+    const sessionId = currentSessionId || createSessionId();
 
     // Store session ID so ChatScreen can use it for subsequent messages
     // (e.g., adaptive card button clicks)
-    setCurrentSessionId(sessionId);
+    if (!currentSessionId) {
+      setCurrentSessionId(sessionId);
+    }
 
     // Navigate IMMEDIATELY to ChatScreen to see real-time streaming
     // Don't pass sessionId - homepage uses ['chat'] cache key, not session-based

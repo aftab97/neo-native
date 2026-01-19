@@ -93,12 +93,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const hasText = localValue.trim().length > 0;
   const hasFiles = files.length > 0;
-  const canSend = (hasText || hasFiles) && !isLoading;
+  const filesLoading = files.some(file => file.loading);
+  const canSend = (hasText || hasFiles) && !isLoading && !filesLoading;
   const isGenerating = isLoading && abortController;
 
   const handleSend = () => {
     const message = localValue.trim();
-    if ((message || hasFiles) && !isLoading) {
+    if ((message || hasFiles) && !isLoading && !filesLoading) {
       // Route to live chat if active, otherwise use normal send
       if (isLiveChatActive && onLiveChatSend) {
         onLiveChatSend(message);

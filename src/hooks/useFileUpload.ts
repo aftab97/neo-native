@@ -12,7 +12,7 @@ import {
   determineErrorState,
   getMimeType,
 } from '../api/fileUpload';
-import { generateUUID } from '../utils/parseStream';
+import { generateUUID, createSessionId } from '../utils/parseStream';
 import { peekZipContents } from '../utils/peekZipContents';
 
 // Allowed file extensions (matching web app)
@@ -100,6 +100,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
   const files = useFileStore((state) => state.files);
   const addToast = usePopupStore((state) => state.addToast);
   const sessionId = useSessionStore((state) => state.currentSessionId);
+  const setCurrentSessionId = useSessionStore((state) => state.setCurrentSessionId);
 
   // Debug: Log session ID on each render
   console.log('[useFileUpload] Hook initialized - sessionId:', sessionId, 'isLiveChatActive:', isLiveChatActive);
@@ -487,7 +488,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
   // Process and upload files
   const processFiles = useCallback(async (newFiles: FileAttachment[]) => {
     // Get the current session ID directly from the store to avoid stale closure
-    const currentSessionId = useSessionStore.getState().currentSessionId;
+    let currentSessionId = useSessionStore.getState().currentSessionId;
 
     console.log('[useFileUpload] processFiles called:', {
       fileCount: newFiles.length,
@@ -497,15 +498,15 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
     });
 
     // Use the store value to ensure we have the latest
-    const activeSessionId = currentSessionId || sessionId;
+    let activeSessionId = currentSessionId || sessionId;
 
+    // If no session exists, create one for file uploads
+    // This allows users to attach files before starting a chat
     if (!activeSessionId) {
-      console.error('[useFileUpload] No session ID available!');
-      addToast({
-        label: 'No active session. Please start a chat first.',
-        variant: 'danger',
-      });
-      return;
+      console.log('[useFileUpload] No session ID, creating one for file upload');
+      activeSessionId = createSessionId();
+      setCurrentSessionId(activeSessionId);
+      console.log('[useFileUpload] Created new session ID:', activeSessionId);
     }
 
     const nonArchiveFiles = newFiles.filter((f) => !isArchiveFile(f.name));
@@ -538,7 +539,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
         variant: 'danger',
       });
     }
-  }, [sessionId, uploadNonArchiveFile, uploadArchiveFile, addToast]);
+  }, [sessionId, setCurrentSessionId, uploadNonArchiveFile, uploadArchiveFile, addToast]);
 
   // Take photo with camera
   const takePhoto = useCallback(async () => {

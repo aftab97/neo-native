@@ -16,7 +16,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { setSelectedAgent } = useAgentStore();
   const { setInputValue } = useChatStore();
-  const { setCurrentSessionId } = useSessionStore();
+  const { currentSessionId, setCurrentSessionId } = useSessionStore();
   const { data: user } = useGetUser();
 
   // Get agent metadata
@@ -40,8 +40,12 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
   }, [agentId, agent?.label]);
 
   const handleSend = (message: string) => {
-    const sessionId = createSessionId();
-    setCurrentSessionId(sessionId);
+    // Use existing session ID (from file uploads) or create a new one
+    const sessionId = currentSessionId || createSessionId();
+
+    if (!currentSessionId) {
+      setCurrentSessionId(sessionId);
+    }
 
     chatMutation.mutate({
       question: message,
