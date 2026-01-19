@@ -8,8 +8,10 @@ import {
   useAgentStore,
   useRequestStore,
   usePopupStore,
+  useFileStore,
 } from "../store";
 import { parseStreamChunk, createMessageId } from "../utils/parseStream";
+import { mergeAllGcsUris } from "../utils/mergeGcsUris";
 
 interface ChatPromptVariables {
   question: string;
@@ -79,11 +81,14 @@ export const useMutateChatPrompt = () => {
         agent,
         cacheAgent,
         userEmail,
-        files = [],
         isPromptFromChatPage = false,
         isPromptFromAgentPage = false,
         isJson = false,
       } = variables;
+
+      // Get files from store and filter out files with errors (matching web app)
+      const filesFromStore = useFileStore.getState().files;
+      const validFiles = filesFromStore.filter((file) => !file.error);
 
       // Use cacheAgent for cache key if provided, otherwise fall back to agent
       const agentForCache = cacheAgent ?? agent;
@@ -117,7 +122,7 @@ export const useMutateChatPrompt = () => {
         ? queryKeys.chat(agentForCache)
         : queryKeys.chat();
 
-      // Add messages to cache optimistically
+      // Add messages to cache optimistically (matching web app)
       // When isJson is true (adaptive card submissions), skip adding user message
       queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
         const newMessages: ChatMessage[] = [];
@@ -138,6 +143,8 @@ export const useMutateChatPrompt = () => {
             message_id: messageIdUser,
             session_id: sessionId || "",
             order: nextOrder,
+            // Include files in user message (matching web app)
+            files: validFiles.length > 0 ? validFiles : undefined,
           });
         }
 
@@ -149,6 +156,8 @@ export const useMutateChatPrompt = () => {
           session_id: sessionId || "",
           status: ["Processing..."],
           order: nextOrder + (isJson ? 0 : 1),
+          // Include files in AI message too (matching web app)
+          files: validFiles.length > 0 ? validFiles : undefined,
         });
 
         return [...old, ...newMessages];
@@ -161,6 +170,11 @@ export const useMutateChatPrompt = () => {
       let isCompleted = false; // Guard against double-completion
 
       return new Promise((resolve, reject) => {
+        // Merge all GCS URIs from valid files (matching web app)
+        const gcsUris = mergeAllGcsUris(validFiles);
+        console.log('[Chat] Sending with gcs_uris:', JSON.stringify(gcsUris));
+        console.log('[Chat] Valid files count:', validFiles.length);
+
         const requestBody = {
           question,
           session_id: sessionId,
@@ -169,13 +183,12 @@ export const useMutateChatPrompt = () => {
           user_id: userEmail,
           selected_backend: agent || undefined,
           is_prompt_from_agent_page: isPromptFromAgentPage,
-          gcs_uris: {
-            "is_unstructured=True": [],
-            "is_unstructured=False": [],
-          },
-          files: files.map((f) => ({
+          gcs_uris: gcsUris,
+          files: validFiles.map((f) => ({
             name: f.name,
             type: f.type,
+            // Include processFileResponse for backend reference
+            processFileResponse: f.processFileResponse,
           })),
         };
 
@@ -398,6 +411,8 @@ export const useMutateChatPrompt = () => {
       });
     },
     onSuccess: () => {
+      // Clear files after successful send (matching web app behavior)
+      useFileStore.getState().removeAllFiles();
       // Invalidate chat titles to refresh sidebar
       queryClient.invalidateQueries({ queryKey: queryKeys.chatTitles });
     },

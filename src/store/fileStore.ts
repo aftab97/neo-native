@@ -29,10 +29,23 @@ export interface FileAttachment {
   uuid?: string;
   // For ZIP preview
   isPreviewOnly?: boolean;
-  // Processing response
+  // Processing response from backend (matches web app structure)
   processFileResponse?: {
     strategy?: string;
     skippedPreprocess?: boolean;
+    // File response from preprocessing (contains gcs_uris)
+    fileResponse?: {
+      gcs_uris?: Record<string, string[]>;
+      [key: string]: unknown;
+    };
+    // For ZIP files - array of results for each extracted file
+    preprocessResults?: Array<{
+      fileResponse?: {
+        gcs_uris?: Record<string, string[]>;
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    }>;
     [key: string]: unknown;
   };
   // Partial error (some sheets failed but file partially processed)

@@ -242,9 +242,8 @@ export const processZipFile = async (
 };
 
 /**
- * Listen for file job status updates
- * The server sends newline-delimited JSON (NDJSON)
- * React Native doesn't support streaming fetch, so we poll until done
+ * Listen for file job status updates using XMLHttpRequest
+ * SSE endpoints keep connections open, so we use XHR with onprogress to capture streaming data
  */
 export const listenForJobStatus = (
   jobId: string,
@@ -254,104 +253,193 @@ export const listenForJobStatus = (
 ): (() => void) => {
   const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_LISTEN}/${jobId}`;
   let isCompleted = false;
-  let pollCount = 0;
-  const maxPolls = 60; // Max 60 polls (about 2 minutes with 2s interval)
-  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let lastProcessedLength = 0;
+  let xhr: XMLHttpRequest | null = null;
+  let retryCount = 0;
+  const maxRetries = 10;
+  let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  console.log('[FileUpload] Listen - Starting for job:', jobId);
+  console.log('========================================');
+  console.log('[FileUpload] Listen - STARTING (XHR mode)');
+  console.log('[FileUpload] Listen - Job ID:', jobId);
+  console.log('[FileUpload] Listen - URL:', url);
+  console.log('========================================');
 
   // Helper to complete
   const complete = (reason: string) => {
     if (isCompleted) return;
     isCompleted = true;
-    console.log('[FileUpload] Listen - Completing:', reason);
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
+    console.log('========================================');
+    console.log('[FileUpload] Listen - COMPLETING');
+    console.log('[FileUpload] Listen - Reason:', reason);
+    console.log('========================================');
+    if (xhr) {
+      xhr.abort();
+      xhr = null;
+    }
+    if (retryTimeout) {
+      clearTimeout(retryTimeout);
+      retryTimeout = null;
     }
     onComplete();
   };
 
-  // Process the response text (NDJSON - multiple JSON objects per line)
-  const processResponse = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    console.log('[FileUpload] Listen - Received', lines.length, 'lines');
+  // Process SSE data chunk
+  const processChunk = (text: string): boolean => {
+    console.log('[FileUpload] Listen - Processing chunk, length:', text.length);
+    console.log('[FileUpload] Listen - Chunk content:', text);
+
+    const lines = text.split('\n');
 
     for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // Skip empty lines and event type lines
+      if (!trimmedLine || trimmedLine.startsWith('event:')) {
+        continue;
+      }
+
+      // Handle SSE data lines (format: "data: {...}")
+      let jsonStr = trimmedLine;
+      if (trimmedLine.startsWith('data:')) {
+        jsonStr = trimmedLine.substring(5).trim();
+      }
+
+      if (!jsonStr || !jsonStr.startsWith('{')) {
+        continue;
+      }
+
       try {
-        const data = JSON.parse(line.trim()) as JobStatusEvent;
-        console.log('[FileUpload] Listen - Status:', {
-          status: data.status,
-          job_id: data.job_id,
-          file_name: data.file_name,
-          hasGcsUris: !!data.file_response?.gcs_uris,
-        });
+        const data = JSON.parse(jsonStr) as JobStatusEvent;
+
+        console.log('****************************************');
+        console.log('[FileUpload] Listen - PARSED JOB STATUS:');
+        console.log('[FileUpload] Listen - status:', data.status);
+        console.log('[FileUpload] Listen - job_id:', data.job_id);
+        console.log('[FileUpload] Listen - file_name:', data.file_name);
+        console.log('[FileUpload] Listen - file_response:', JSON.stringify(data.file_response, null, 2));
+        console.log('****************************************');
 
         onStatus(data);
 
-        // Check if job is complete
-        if (['done', 'complete', 'completed', 'failed', 'error'].includes(data.status)) {
-          complete(`Job status: ${data.status}`);
-          return true; // Signal that we're done
+        // Check if job is complete (matching web app logic)
+        const terminalStatuses = ['done', 'complete', 'failed', 'error'];
+        if (terminalStatuses.includes(data.status)) {
+          console.log(`[FileUpload] Listen - Terminal status "${data.status}" received`);
+          return true;
         }
       } catch (e) {
-        console.error('[FileUpload] Listen - Parse error:', e, 'Line:', line.substring(0, 100));
+        console.error('[FileUpload] Listen - JSON parse error:', e);
+        console.error('[FileUpload] Listen - Failed string:', jsonStr.substring(0, 100));
       }
     }
-    return false; // Not done yet
+
+    return false;
   };
 
-  // Poll the endpoint
-  const poll = async () => {
+  // Start XHR connection
+  const startConnection = () => {
     if (isCompleted) return;
 
-    pollCount++;
-    console.log('[FileUpload] Listen - Poll', pollCount, '/', maxPolls);
+    retryCount++;
+    console.log(`[FileUpload] Listen - Starting XHR connection (attempt ${retryCount}/${maxRetries})`);
 
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Cache-Control': 'no-cache',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      });
+    lastProcessedLength = 0;
+    xhr = new XMLHttpRequest();
 
-      console.log('[FileUpload] Listen - Response status:', response.status);
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('Accept', 'text/event-stream, application/json, text/plain, */*');
+    xhr.setRequestHeader('Cache-Control', 'no-cache');
+    xhr.setRequestHeader('ngrok-skip-browser-warning', 'true');
 
-      if (!response.ok) {
-        console.error('[FileUpload] Listen - HTTP error:', response.status);
-        if (pollCount >= maxPolls) {
-          complete('Max polls reached with error');
-          onError(new Error(`HTTP error: ${response.status}`));
+    // Handle progress - this fires as data streams in
+    xhr.onprogress = () => {
+      if (isCompleted || !xhr) return;
+
+      const responseText = xhr.responseText;
+      const newData = responseText.substring(lastProcessedLength);
+      lastProcessedLength = responseText.length;
+
+      if (newData.length > 0) {
+        console.log('[FileUpload] Listen - XHR onprogress, new data length:', newData.length);
+        const isDone = processChunk(newData);
+        if (isDone) {
+          complete('Terminal status received');
         }
-        return;
       }
+    };
 
-      const text = await response.text();
-      console.log('[FileUpload] Listen - Response text length:', text.length);
-      console.log('[FileUpload] Listen - Response preview:', text.substring(0, 300));
+    xhr.onreadystatechange = () => {
+      if (!xhr) return;
 
-      const isDone = processResponse(text);
+      console.log('[FileUpload] Listen - XHR readyState:', xhr.readyState, 'status:', xhr.status);
 
-      if (!isDone && pollCount >= maxPolls) {
-        console.error('[FileUpload] Listen - Max polls reached');
-        complete('Max polls reached');
-        onError(new Error('Timeout waiting for file processing'));
+      // DONE state
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          // Process any remaining data
+          const responseText = xhr.responseText;
+          const newData = responseText.substring(lastProcessedLength);
+          if (newData.length > 0) {
+            console.log('[FileUpload] Listen - XHR complete, processing remaining data');
+            const isDone = processChunk(newData);
+            if (isDone) {
+              complete('Terminal status received');
+              return;
+            }
+          }
+
+          // Connection closed but not done - retry
+          if (!isCompleted && retryCount < maxRetries) {
+            console.log('[FileUpload] Listen - Connection closed, retrying in 2s...');
+            retryTimeout = setTimeout(startConnection, 2000);
+          } else if (!isCompleted) {
+            complete('Max retries reached');
+            onError(new Error('Max retries reached waiting for file processing'));
+          }
+        } else if (xhr.status === 0) {
+          // Request aborted or network error
+          if (!isCompleted && retryCount < maxRetries) {
+            console.log('[FileUpload] Listen - Request failed (status 0), retrying in 2s...');
+            retryTimeout = setTimeout(startConnection, 2000);
+          }
+        } else {
+          console.error('[FileUpload] Listen - HTTP error:', xhr.status);
+          if (!isCompleted) {
+            complete('HTTP error');
+            onError(new Error(`HTTP error: ${xhr.status}`));
+          }
+        }
       }
-    } catch (error) {
-      console.error('[FileUpload] Listen - Fetch error:', error);
-      if (pollCount >= maxPolls) {
-        complete('Max polls reached with fetch error');
-        onError(error instanceof Error ? error : new Error(String(error)));
+    };
+
+    xhr.onerror = () => {
+      console.error('[FileUpload] Listen - XHR error event');
+      if (!isCompleted && retryCount < maxRetries) {
+        console.log('[FileUpload] Listen - Retrying in 2s...');
+        retryTimeout = setTimeout(startConnection, 2000);
+      } else if (!isCompleted) {
+        complete('XHR error');
+        onError(new Error('Network error'));
       }
-    }
+    };
+
+    xhr.ontimeout = () => {
+      console.log('[FileUpload] Listen - XHR timeout');
+      if (!isCompleted && retryCount < maxRetries) {
+        retryTimeout = setTimeout(startConnection, 2000);
+      }
+    };
+
+    // Set timeout (2 minutes)
+    xhr.timeout = 120000;
+
+    console.log('[FileUpload] Listen - Sending XHR request...');
+    xhr.send();
   };
 
-  // Start polling immediately, then every 2 seconds
-  poll();
-  pollInterval = setInterval(poll, 2000);
+  // Start the connection
+  startConnection();
 
   // Return cleanup function
   return () => {

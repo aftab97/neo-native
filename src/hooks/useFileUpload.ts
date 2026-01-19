@@ -201,12 +201,10 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
       } else {
         // Normal mode: queue for preprocessing
         const jobId = generateUUID();
-        await queueFileJob(currentSessionId, file.name, jobId);
-
         updateFile(file.id, { jobID: jobId });
-        setFileProgress(file.id, 80);
 
-        // Step 4: Listen for job status via SSE
+        // Step 4: Start listening BEFORE queueing (to not miss early events)
+        // This matches the web app behavior
         console.log('[useFileUpload] Starting SSE listener for job:', jobId);
         listenForJobStatus(
           jobId,
@@ -226,13 +224,18 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
               setFileError(file.id, 'Processing failed', errorDetails);
             } else {
               console.log('[useFileUpload] Updating file to complete');
+              // Match web app structure: processFileResponse.fileResponse.gcs_uris
+              const { file_response, ...restOfStatus } = status;
               updateFile(file.id, {
                 loading: false,
                 error: false,
                 partialError: isPartialError,
                 errorDetails: isPartialError ? errorDetails : undefined,
                 uploadProgress: 100,
-                processFileResponse: status.file_response,
+                processFileResponse: {
+                  fileResponse: file_response ? { ...file_response } : undefined,
+                  ...restOfStatus,
+                },
               });
             }
           },
@@ -244,6 +247,10 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
             console.log('[useFileUpload] SSE complete callback for job:', jobId);
           }
         );
+
+        // Step 5: Queue the job (after listener is set up)
+        await queueFileJob(currentSessionId, file.name, jobId);
+        setFileProgress(file.id, 80);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
@@ -304,13 +311,18 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
             if (hasError) {
               setFileError(file.id, 'Processing failed', errorDetails);
             } else {
+              // Match web app structure: processFileResponse.fileResponse.gcs_uris
+              const { file_response, ...restOfStatus } = status;
               updateFile(file.id, {
                 loading: false,
                 error: false,
                 partialError: isPartialError,
                 errorDetails: isPartialError ? errorDetails : undefined,
                 uploadProgress: 100,
-                processFileResponse: status.file_response,
+                processFileResponse: {
+                  fileResponse: file_response ? { ...file_response } : undefined,
+                  ...restOfStatus,
+                },
               });
             }
           },
