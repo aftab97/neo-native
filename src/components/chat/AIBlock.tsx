@@ -1,14 +1,25 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Dimensions,
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useLayoutStore } from '../../store';
-import { ChatMessage } from '../../types/chat';
+import { ChatMessage, ChatContentType } from '../../types/chat';
 import { colors, codeColors } from '../../theme/colors';
 import { AdaptiveCardViewer } from './AdaptiveCardViewer';
 import { ChartViewer } from './ChartViewer';
 import { AIMessageImages, isImageFile } from './AIMessageImages';
 import { AIMessageAttachments } from './AIMessageAttachments';
 import { ChatAIFeedback } from './ChatAIFeedback';
+import { CloseIcon } from '../icons';
 
 interface AIBlockProps {
   message: ChatMessage;
@@ -63,6 +74,10 @@ const parseJsonResponses = (message: string): ParsedResponse[] | null => {
  */
 export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveChatAgent = false }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
 
   const theme = isDarkTheme ? 'dark' : 'light';
   const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
@@ -214,6 +229,34 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
     em: {
       fontStyle: 'italic' as const,
     },
+    image: {
+      borderRadius: 8,
+      marginVertical: 8,
+    },
+  };
+
+  // Custom render rules for markdown (especially for images)
+  const markdownRules = {
+    image: (node: any, children: any, parent: any, styles: any) => {
+      const { src, alt } = node.attributes;
+      if (!src) return null;
+
+      return (
+        <TouchableOpacity
+          key={node.key}
+          onPress={() => setSelectedImageUrl(src)}
+          activeOpacity={0.9}
+          style={imageStyles.container}
+        >
+          <Image
+            source={{ uri: src }}
+            style={imageStyles.image}
+            resizeMode="contain"
+            accessibilityLabel={alt || 'AI generated image'}
+          />
+        </TouchableOpacity>
+      );
+    },
   };
 
   // Render parsed responses (cards, text, charts)
@@ -231,7 +274,7 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         );
       } else if (res.type === 'text' && res.text) {
         return (
-          <Markdown key={`text-${idx}`} style={markdownStyles}>
+          <Markdown key={`text-${idx}`} style={markdownStyles} rules={markdownRules}>
             {res.text}
           </Markdown>
         );
@@ -251,6 +294,50 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
   const imageFiles = message.files?.filter((f) => isImageFile(f)) || [];
   const attachmentFiles = message.files?.filter((f) => !isImageFile(f)) || [];
 
+  // Get images from contents array (for generated images)
+  const imageContents = message.contents?.filter((c) => {
+    const typeStr = String(c.type).toLowerCase();
+    return typeStr === 'image';
+  }) || [];
+
+  // Render images from contents array
+  const renderImageContents = () => {
+    if (imageContents.length === 0) return null;
+
+    return imageContents.map((imgContent, idx) => {
+      // Try to get the URL from various possible locations
+      let imageUrl = imgContent.url;
+      if (!imageUrl && imgContent.content) {
+        try {
+          const parsed = typeof imgContent.content === 'string' ? JSON.parse(imgContent.content) : imgContent.content;
+          imageUrl = parsed.signedUrl || parsed.url;
+        } catch {
+          // content might be a direct URL string
+          if (typeof imgContent.content === 'string' && imgContent.content.startsWith('http')) {
+            imageUrl = imgContent.content;
+          }
+        }
+      }
+
+      if (!imageUrl) return null;
+
+      return (
+        <TouchableOpacity
+          key={`content-img-${idx}`}
+          onPress={() => setSelectedImageUrl(imageUrl!)}
+          activeOpacity={0.9}
+          style={imageStyles.container}
+        >
+          <Image
+            source={{ uri: imageUrl }}
+            style={imageStyles.image}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      );
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Status indicator */}
@@ -268,8 +355,11 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         </View>
       )}
 
-      {/* Images from AI response */}
+      {/* Images from AI response files */}
       {imageFiles.length > 0 && <AIMessageImages files={imageFiles} />}
+
+      {/* Images from contents array (generated images) */}
+      {renderImageContents()}
 
       {/* Non-image attachments */}
       {attachmentFiles.length > 0 && <AIMessageAttachments files={attachmentFiles} />}
@@ -281,7 +371,7 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
           renderParsedResponses()
         ) : (
           // Render as markdown
-          <Markdown style={markdownStyles}>{message.message}</Markdown>
+          <Markdown style={markdownStyles} rules={markdownRules}>{message.message}</Markdown>
         )
       ) : isLoading ? null : (
         <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
@@ -297,6 +387,42 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
           messageID={message.message_id}
         />
       )}
+
+      {/* Fullscreen image modal */}
+      <Modal
+        visible={selectedImageUrl !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedImageUrl(null)}
+      >
+        <Pressable
+          style={imageStyles.modalOverlay}
+          onPress={() => setSelectedImageUrl(null)}
+        >
+          <View style={imageStyles.modalContent}>
+            <TouchableOpacity
+              style={imageStyles.closeButton}
+              onPress={() => setSelectedImageUrl(null)}
+            >
+              <CloseIcon size={24} color="#ffffff" />
+            </TouchableOpacity>
+
+            {selectedImageUrl && (
+              <Image
+                source={{ uri: selectedImageUrl }}
+                style={[
+                  imageStyles.fullImage,
+                  {
+                    maxWidth: screenWidth - 40,
+                    maxHeight: screenHeight - 120,
+                  },
+                ]}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -326,5 +452,47 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     marginVertical: 8,
+  },
+});
+
+// Styles for markdown images
+const imageStyles = StyleSheet.create({
+  container: {
+    marginVertical: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    maxWidth: 300,
+  },
+  image: {
+    width: '100%',
+    height: undefined,
+    aspectRatio: 1,
+    maxHeight: 300,
+    borderRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
   },
 });

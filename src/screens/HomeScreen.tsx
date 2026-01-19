@@ -87,7 +87,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
 
       <ChatInput
         onSend={handleSend}
-        placeholder="Ask Neo anything..."
+        placeholder="Ask Neo..."
         isLoading={chatMutation.isPending}
       />
     </KeyboardAvoidingView>

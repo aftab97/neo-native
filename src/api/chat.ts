@@ -350,6 +350,44 @@ export const useMutateChatPrompt = () => {
           });
         });
 
+        // Handle TRANSLATED_FILES event - this contains signed URLs for generated images
+        (es as any).addEventListener("TRANSLATED_FILES", (event: any) => {
+          console.log("SSE: TRANSLATED_FILES event received", event.data);
+          try {
+            const data = JSON.parse(event.data || "{}");
+            const translatedFiles = data.translatedFiles || [];
+
+            if (translatedFiles.length > 0) {
+              // Update the AI message with the translated files (images with signed URLs)
+              queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
+                const updated = [...old];
+                const lastIndex = updated.length - 1;
+
+                if (lastIndex >= 0 && updated[lastIndex].role === "ai") {
+                  // Add/update files with signed URLs
+                  const existingFiles = updated[lastIndex].files || [];
+                  const newFiles = translatedFiles.map((f: { name: string; signedUrl: string }) => ({
+                    name: f.name,
+                    type: f.name.toLowerCase().match(/\.(png|jpg|jpeg|gif|webp)$/i) ? 'image' : 'file',
+                    loading: false,
+                    error: false,
+                    signedUrl: f.signedUrl,
+                  }));
+
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    files: [...existingFiles, ...newFiles],
+                  };
+                }
+
+                return updated;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing TRANSLATED_FILES event:", e);
+          }
+        });
+
         // Handle END event specially - this signals stream completion
         (es as any).addEventListener("END", (event: any) => {
           console.log("SSE: END event received, completing stream");

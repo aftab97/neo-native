@@ -46,6 +46,7 @@ const extractMessageFromCallBackend = (chunk: string): {
   message: string;
   backend: string;
   tools?: any[];
+  contents?: any[];
 } | null => {
   if (!chunk.includes('event: CALL_BACKEND')) return null;
 
@@ -63,8 +64,9 @@ const extractMessageFromCallBackend = (chunk: string): {
     const message = json?.response?.object?.message || '';
     const backend = json?.response?.backend || '';
     const tools = json?.response?.object?.tools || [];
+    const contents = json?.response?.object?.contents || [];
 
-    return { message, backend, tools };
+    return { message, backend, tools, contents };
   } catch (error) {
     console.debug('Error parsing CALL_BACKEND chunk:', error);
     return null;
@@ -336,6 +338,17 @@ export const parseStreamChunk = (chunk: string): ParsedChunk | null => {
           result.contents?.push({
             type: ChatContentType.CHART,
             content: JSON.stringify(chartTools),
+          });
+        }
+      }
+      // Handle image contents from contentArray (generated images with signed URLs)
+      if (parsed.contents && Array.isArray(parsed.contents)) {
+        const imageContents = parsed.contents.filter((c: any) => c.type === 'image');
+        for (const img of imageContents) {
+          result.contents?.push({
+            type: ChatContentType.IMAGE,
+            content: typeof img.content === 'string' ? img.content : JSON.stringify(img.content),
+            url: img.content?.signedUrl || img.signedUrl || img.url,
           });
         }
       }
