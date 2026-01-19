@@ -70,8 +70,8 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {showStartScreen ? (
         <AgentStartScreen

@@ -9,6 +9,7 @@ import {
   Text,
   Modal,
   Pressable,
+  KeyboardEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../store';
@@ -50,6 +51,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [localValue, setLocalValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [showAttachmentSlideout, setShowAttachmentSlideout] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // Track keyboard visibility to adjust bottom padding
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // Sync from store when it changes externally (e.g., suggestion clicked)
   useEffect(() => {
@@ -112,11 +132,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  // Only apply safe area inset when keyboard is hidden
+  const bottomPadding = keyboardVisible ? 8 : Math.max(insets.bottom, 8);
+
   return (
     <View
       style={[
         styles.container,
-        { paddingBottom: Math.max(insets.bottom, 8), backgroundColor },
+        { paddingBottom: bottomPadding, backgroundColor },
       ]}
     >
       {/* Attachment Preview */}

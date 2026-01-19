@@ -219,8 +219,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Chat messages={messages} onCardSubmit={handleCardSubmit} />
 
