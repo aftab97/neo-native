@@ -36,3 +36,4 @@ export {
   type ProcessedNotification,
   type NotificationVariant,
 } from './notifications';
+export { useMutateSendFeedback } from './feedback';

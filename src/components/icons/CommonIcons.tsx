@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Rect, G, Defs, ClipPath } from 'react-native-svg';
 
 interface IconProps {
   size?: number;
@@ -231,6 +231,102 @@ export const GlobeIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' })
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Feedback icons
+export const CopyIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M20 9H11a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const DownloadIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7 10l5 5 5-5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 15V3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const ThumbsUpIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const ThumbsDownIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const ThumbsUpFilledIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M2 20V11a2 2 0 0 1 2-2h3v13H4a2 2 0 0 1-2-2Z"
+      fill={color}
+    />
+    <Path
+      d="M7 22V9l4-9a3 3 0 0 1 3 3v5h5.66a2 2 0 0 1 2 2.3l-1.38 9a2 2 0 0 1-2 1.7H7Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const ThumbsDownFilledIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M22 4v7a2.31 2.31 0 0 1-2.33 2H17V2h2.67A2.31 2.31 0 0 1 22 4Z"
+      fill={color}
+    />
+    <Path
+      d="M17 2v11l-4 9a3 3 0 0 1-3-3v-4H4.34a2 2 0 0 1-2-2.3l1.38-9A2 2 0 0 1 5.72 2H17Z"
+      fill={color}
     />
   </Svg>
 );

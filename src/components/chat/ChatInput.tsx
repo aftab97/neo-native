@@ -40,6 +40,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
+  const isFeedbackInputFocused = useLayoutStore((state) => state.isFeedbackInputFocused);
   const { abortController } = useRequestStore();
   const files = useFileStore((state) => state.files);
 
@@ -135,6 +136,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Only apply safe area inset when keyboard is hidden
   const bottomPadding = keyboardVisible ? 8 : Math.max(insets.bottom, 8);
+
+  // Hide ChatInput when feedback input is focused to avoid confusion
+  if (isFeedbackInputFocused) {
+    return null;
+  }
 
   return (
     <View

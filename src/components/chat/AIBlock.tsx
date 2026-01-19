@@ -6,6 +6,9 @@ import { ChatMessage } from '../../types/chat';
 import { colors, codeColors } from '../../theme/colors';
 import { AdaptiveCardViewer } from './AdaptiveCardViewer';
 import { ChartViewer } from './ChartViewer';
+import { AIMessageImages, isImageFile } from './AIMessageImages';
+import { AIMessageAttachments } from './AIMessageAttachments';
+import { ChatAIFeedback } from './ChatAIFeedback';
 
 interface AIBlockProps {
   message: ChatMessage;
@@ -244,6 +247,10 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
     });
   };
 
+  // Get image and non-image files from message
+  const imageFiles = message.files?.filter((f) => isImageFile(f)) || [];
+  const attachmentFiles = message.files?.filter((f) => !isImageFile(f)) || [];
+
   return (
     <View style={styles.container}>
       {/* Status indicator */}
@@ -261,6 +268,12 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         </View>
       )}
 
+      {/* Images from AI response */}
+      {imageFiles.length > 0 && <AIMessageImages files={imageFiles} />}
+
+      {/* Non-image attachments */}
+      {attachmentFiles.length > 0 && <AIMessageAttachments files={attachmentFiles} />}
+
       {/* Message content */}
       {message.message ? (
         parsedResponses ? (
@@ -274,6 +287,15 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
           No response
         </Text>
+      )}
+
+      {/* Feedback actions (only for AI messages with content, not for live chat agents) */}
+      {message.message && !isLoading && !isLiveChatAgent && (
+        <ChatAIFeedback
+          message={message.message}
+          sessionID={message.session_id}
+          messageID={message.message_id}
+        />
       )}
     </View>
   );

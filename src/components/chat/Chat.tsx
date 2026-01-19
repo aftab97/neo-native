@@ -1,5 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import { FlatList, View, StyleSheet, ListRenderItem } from 'react-native';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
+import {
+  FlatList,
+  View,
+  StyleSheet,
+  ListRenderItem,
+  Keyboard,
+  Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 import { useLayoutStore } from '../../store';
 import { ChatMessage } from '../../types/chat';
 import { UserBlock } from './UserBlock';
@@ -13,6 +22,59 @@ interface ChatProps {
 export const Chat: React.FC<ChatProps> = ({ messages, onCardSubmit }) => {
   const flatListRef = useRef<FlatList>(null);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
+  const setChatListScrollCallback = useLayoutStore((state) => state.setChatListScrollCallback);
+  const setChatListScrollToEndCallback = useLayoutStore((state) => state.setChatListScrollToEndCallback);
+  const setChatListMetrics = useLayoutStore((state) => state.setChatListMetrics);
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const contentHeightRef = useRef(0);
+  const scrollYRef = useRef(0);
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  // Scroll to offset callback for feedback component
+  const scrollToOffset = useCallback((offset: number) => {
+    flatListRef.current?.scrollToOffset({ offset, animated: true });
+  }, []);
+
+  // Scroll to end callback
+  const scrollToEnd = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  // Register scroll callbacks on mount
+  useEffect(() => {
+    setChatListScrollCallback(scrollToOffset);
+    setChatListScrollToEndCallback(scrollToEnd);
+    return () => {
+      setChatListScrollCallback(null);
+      setChatListScrollToEndCallback(null);
+    };
+  }, [scrollToOffset, scrollToEnd, setChatListScrollCallback, setChatListScrollToEndCallback]);
+
+  // Track scroll position
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    scrollYRef.current = contentOffset.y;
+    contentHeightRef.current = contentSize.height;
+    setChatListMetrics(contentSize.height, contentOffset.y, layoutMeasurement.height);
+  }, [setChatListMetrics]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -48,6 +110,9 @@ export const Chat: React.FC<ChatProps> = ({ messages, onCardSubmit }) => {
     return 0;
   });
 
+  // Footer height to create space for keyboard - just keyboard height is enough
+  const footerHeight = keyboardHeight > 0 ? keyboardHeight : 20;
+
   return (
     <FlatList
       ref={flatListRef}
@@ -59,11 +124,13 @@ export const Chat: React.FC<ChatProps> = ({ messages, onCardSubmit }) => {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
       maintainVisibleContentPosition={{
         minIndexForVisible: 0,
         autoscrollToTopThreshold: 10,
       }}
-      ListFooterComponent={<View style={styles.footer} />}
+      ListFooterComponent={<View style={{ height: footerHeight }} />}
     />
   );
 };
@@ -74,8 +141,5 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingTop: 8,
-  },
-  footer: {
-    height: 20,
   },
 });

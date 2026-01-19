@@ -21,6 +21,12 @@ export { FileIcon } from './CommonIcons';
 export { SearchIcon } from './CommonIcons';
 export { ImageIcon } from './CommonIcons';
 export { GlobeIcon } from './CommonIcons';
+export { CopyIcon } from './CommonIcons';
+export { DownloadIcon } from './CommonIcons';
+export { ThumbsUpIcon } from './CommonIcons';
+export { ThumbsDownIcon } from './CommonIcons';
+export { ThumbsUpFilledIcon } from './CommonIcons';
+export { ThumbsDownFilledIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';
