@@ -81,7 +81,11 @@ export const useFileStore = create<FileState>((set, get) => ({
       files: state.files.filter((file) => file.id !== id),
     })),
 
-  removeAllFiles: () => set({ files: [] }),
+  removeAllFiles: () => {
+    console.log('[FileStore] removeAllFiles called - CLEARING ALL FILES');
+    console.trace('[FileStore] Stack trace:');
+    set({ files: [] });
+  },
 
   updateFile: (id, updates) =>
     set((state) => ({

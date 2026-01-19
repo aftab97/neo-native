@@ -190,6 +190,8 @@ export const queueFileJob = async (
 
 /**
  * Process ZIP files (uploads to backend for extraction)
+ * Uses native fetch instead of apiFetch because FormData needs
+ * Content-Type to be set automatically by fetch (multipart/form-data with boundary)
  */
 export const processZipFile = async (
   sessionId: string,
@@ -197,8 +199,10 @@ export const processZipFile = async (
   fileName: string,
   fileUUIDMap: Record<string, string>
 ): Promise<ProcessFileResponse> => {
+  const url = `${API_BASE_URL}${ENDPOINTS.PROCESS_FILE}`;
+
   console.log('[FileUpload] processZipFile - Starting:', {
-    endpoint: ENDPOINTS.PROCESS_FILE,
+    url,
     sessionId,
     fileName,
     fileUUIDMap,
@@ -207,7 +211,7 @@ export const processZipFile = async (
   // Create FormData
   const formData = new FormData();
 
-  // Add the file
+  // Add the file - React Native FormData format
   formData.append('files', {
     uri: fileUri,
     name: fileName,
@@ -217,14 +221,18 @@ export const processZipFile = async (
   formData.append('session_id', sessionId);
   formData.append('fileUUIDMap', JSON.stringify(fileUUIDMap));
 
-  const response = await apiFetch(ENDPOINTS.PROCESS_FILE, {
+  // Use native fetch directly - don't set Content-Type header
+  // Let fetch set it automatically with the correct multipart boundary
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
-      // Don't set Content-Type - let fetch set it with boundary for FormData
-      'Content-Type': undefined as unknown as string,
+      // Only set ngrok header, NOT Content-Type
+      'ngrok-skip-browser-warning': 'true',
     },
     body: formData as unknown as BodyInit,
   });
+
+  console.log('[FileUpload] processZipFile - Response status:', response.status);
 
   if (!response.ok && response.status !== 207) {
     const errorData = await response.json().catch(() => ({}));
@@ -232,7 +240,7 @@ export const processZipFile = async (
       status: response.status,
       errorData,
     });
-    throw new Error(errorData.message || `Failed to process ZIP file: ${response.status}`);
+    throw new Error(errorData.error || errorData.message || `Failed to process ZIP file: ${response.status}`);
   }
 
   const result = await response.json();

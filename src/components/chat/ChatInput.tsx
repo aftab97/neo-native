@@ -41,7 +41,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { abortController } = useRequestStore();
   const files = useFileStore((state) => state.files);
-  const removeAllFiles = useFileStore((state) => state.removeAllFiles);
 
   // Use store's inputValue only for initial/external values (e.g., suggestions)
   const storeInputValue = useChatStore((state) => state.inputValue);
@@ -87,7 +86,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onSend(message);
       }
       setLocalValue(''); // Clear immediately
-      removeAllFiles(); // Clear files after sending
+      // NOTE: Don't clear files here - chat.ts clears them in onSuccess after the mutation completes
+      // The mutation needs the files to extract gcs_uris for the request
       Keyboard.dismiss();
     }
   };

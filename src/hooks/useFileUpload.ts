@@ -13,6 +13,7 @@ import {
   getMimeType,
 } from '../api/fileUpload';
 import { generateUUID } from '../utils/parseStream';
+import { peekZipContents } from '../utils/peekZipContents';
 
 // Allowed file extensions (matching web app)
 const DOCUMENT_EXTENSIONS = [
@@ -92,6 +93,8 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
   const { isLiveChatActive = false } = options;
   const addFiles = useFileStore((state) => state.addFiles);
   const updateFile = useFileStore((state) => state.updateFile);
+  const removeFile = useFileStore((state) => state.removeFile);
+  const replacePreviewFiles = useFileStore((state) => state.replacePreviewFiles);
   const setFileError = useFileStore((state) => state.setFileError);
   const setFileProgress = useFileStore((state) => state.setFileProgress);
   const files = useFileStore((state) => state.files);
@@ -258,87 +261,228 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
     }
   }, [isLiveChatActive, updateFile, setFileError, setFileProgress]);
 
-  // Upload archive file (ZIP, etc.)
+  // Upload archive file (ZIP, etc.) - matches web app behavior
+  // 1. Peek inside ZIP to get filenames
+  // 2. Remove ZIP from UI, create preview tiles for each file
+  // 3. Send ZIP + fileUUIDMap to BFF
+  // 4. Replace preview tiles with real tiles, start listeners
   const uploadArchiveFile = useCallback(async (
     file: FileAttachment,
     currentSessionId: string
   ): Promise<void> => {
+    console.log('[useFileUpload] uploadArchiveFile - Starting for:', file.name);
+
     try {
-      const uuid = generateUUID();
+      // Step 1: Peek inside the ZIP to get filenames (like web app)
+      const filenames = await peekZipContents(file.uri);
+      console.log('[useFileUpload] Peeked ZIP contents:', filenames);
 
-      // Update file with UUID for tracking
-      updateFile(file.id, { uuid, isPreviewOnly: true });
+      if (filenames.length === 0) {
+        // If we couldn't peek, process as single file
+        console.log('[useFileUpload] Could not peek ZIP, processing as single file');
+        setFileError(file.id, 'Could not read ZIP contents');
+        return;
+      }
 
-      setFileProgress(file.id, 20);
+      // Step 2: Generate UUIDs for each file inside the ZIP
+      const fileUUIDMap: Record<string, string> = {};
+      filenames.forEach((name) => {
+        fileUUIDMap[name] = generateUUID();
+      });
+      console.log('[useFileUpload] Generated fileUUIDMap:', fileUUIDMap);
 
-      // Create file UUID map (for ZIP extraction tracking)
-      const fileUUIDMap: Record<string, string> = {
-        [file.name]: uuid,
-      };
+      // Step 3: Remove the original ZIP file from the store
+      removeFile(file.id);
 
-      // Process ZIP file via backend
+      // Step 4: Create preview tiles for each file inside the ZIP
+      const previewFiles: FileAttachment[] = filenames.map((name) => ({
+        id: generateFileId(),
+        name,
+        type: getFileTypeLabel(name),
+        uri: file.uri, // Keep original URI for reference
+        loading: true,
+        error: false,
+        isPreviewOnly: true,
+        uuid: fileUUIDMap[name],
+        uploadProgress: 0,
+      }));
+      addFiles(previewFiles);
+      console.log('[useFileUpload] Created', previewFiles.length, 'preview tiles');
+
+      // Step 5: Send ZIP file to BFF with fileUUIDMap
       const response = await processZipFile(
         currentSessionId,
         file.uri,
         file.name,
         fileUUIDMap
       );
+      console.log('[useFileUpload] processZipFile response:', response);
 
-      setFileProgress(file.id, 60);
-
-      // Update file with job info
+      // Step 6: Handle response - replace preview tiles with real tiles
       if (response.jobs && response.jobs.length > 0) {
-        const job = response.jobs[0];
+        // Filter out __MACOSX metadata files from BFF response
+        const validJobs = response.jobs.filter((job: any) => {
+          const fileName = job.fileName || job.file_name || '';
+          return !fileName.startsWith('__MACOSX') && !fileName.includes('/__MACOSX');
+        });
+        console.log('[useFileUpload] Filtered jobs:', validJobs.length, 'from', response.jobs.length);
 
-        if (job.error) {
-          setFileError(file.id, job.error);
-          return;
-        }
+        // Create real file entries from the jobs response
+        // Note: BFF returns snake_case (job_id, file_name) but we normalize to camelCase
+        const realFiles: FileAttachment[] = validJobs.map((job: any) => {
+          const jobID = job.jobID || job.job_id;
+          const fileName = job.fileName || job.file_name;
+          const hasError = !jobID || !!job.error;
 
-        updateFile(file.id, {
-          jobID: job.jobID,
-          isPreviewOnly: false,
+          console.log('[useFileUpload] Creating real file entry:', {
+            fileName,
+            jobID,
+            uuid: job.uuid,
+            hasError,
+            rawJob: job,
+          });
+
+          return {
+            id: generateFileId(),
+            name: fileName,
+            type: getFileTypeLabel(fileName),
+            uri: file.uri,
+            loading: !hasError,
+            error: hasError,
+            errorMessage: job.error,
+            jobID: jobID,
+            uuid: job.uuid,
+            isPreviewOnly: false,
+            uploadProgress: hasError ? 0 : 50,
+          };
         });
 
-        setFileProgress(file.id, 80);
+        // Get preview UUIDs to replace
+        const previewUuids = Object.values(fileUUIDMap);
 
-        // Listen for job status
-        listenForJobStatus(
-          job.jobID,
-          (status) => {
-            const { hasError, isPartialError, errorDetails } = determineErrorState(status);
+        // Replace preview files with real files
+        replacePreviewFiles(previewUuids, realFiles);
+        console.log('[useFileUpload] Replaced preview tiles with', realFiles.length, 'real tiles');
 
-            if (hasError) {
-              setFileError(file.id, 'Processing failed', errorDetails);
-            } else {
-              // Match web app structure: processFileResponse.fileResponse.gcs_uris
-              const { file_response, ...restOfStatus } = status;
-              updateFile(file.id, {
-                loading: false,
-                error: false,
-                partialError: isPartialError,
-                errorDetails: isPartialError ? errorDetails : undefined,
-                uploadProgress: 100,
-                processFileResponse: {
-                  fileResponse: file_response ? { ...file_response } : undefined,
-                  ...restOfStatus,
-                },
-              });
+        // Step 7: Start SSE listeners for each job (like web app)
+        validJobs.forEach((job: any) => {
+          const jobID = job.jobID || job.job_id;
+          const fileName = job.fileName || job.file_name;
+
+          if (jobID && !job.error) {
+            console.log('[useFileUpload] Starting listener for job:', jobID, 'file:', fileName);
+
+            // Find the file ID for this job
+            const fileEntry = realFiles.find((f) => f.uuid === job.uuid);
+            if (!fileEntry) {
+              console.error('[useFileUpload] Could not find file entry for job:', jobID);
+              return;
             }
-          },
-          (error) => {
-            setFileError(file.id, error.message);
-          },
-          () => {
-            // Cleanup on complete
+
+            listenForJobStatus(
+              jobID,
+              (status) => {
+                console.log('[useFileUpload] ZIP job status update for', fileName, ':', status.status);
+                console.log('[useFileUpload] ZIP job file_response:', JSON.stringify(status.file_response));
+                const { hasError, isPartialError, errorDetails } = determineErrorState(status);
+
+                // Find current file by UUID since ID might have changed
+                const currentFiles = useFileStore.getState().files;
+                const currentFile = currentFiles.find((f) => f.uuid === job.uuid);
+
+                console.log('[useFileUpload] ZIP looking for file with uuid:', job.uuid);
+                console.log('[useFileUpload] ZIP available files:', currentFiles.map(f => ({ id: f.id, uuid: f.uuid, name: f.name })));
+
+                if (!currentFile) {
+                  console.error('[useFileUpload] ZIP file not found for UUID:', job.uuid);
+                  return;
+                }
+
+                console.log('[useFileUpload] ZIP found file:', currentFile.id, currentFile.name);
+
+                if (hasError) {
+                  setFileError(currentFile.id, 'Processing failed', errorDetails);
+                } else {
+                  // Match web app structure: processFileResponse.fileResponse.gcs_uris
+                  // Only mark as fully complete on terminal statuses
+                  const terminalStatuses = ['done', 'complete', 'failed', 'error'];
+                  const isTerminal = terminalStatuses.includes(status.status);
+                  const { file_response, ...restOfStatus } = status;
+
+                  console.log('[useFileUpload] ZIP updating file:', {
+                    fileId: currentFile.id,
+                    status: status.status,
+                    isTerminal,
+                    hasGcsUris: !!file_response?.gcs_uris,
+                    gcsUris: file_response?.gcs_uris,
+                  });
+
+                  updateFile(currentFile.id, {
+                    loading: !isTerminal,
+                    error: false,
+                    partialError: isPartialError,
+                    errorDetails: isPartialError ? errorDetails : undefined,
+                    uploadProgress: isTerminal ? 100 : 80,
+                    processFileResponse: {
+                      fileResponse: file_response ? { ...file_response } : undefined,
+                      ...restOfStatus,
+                    },
+                  });
+
+                  // Verify the update was applied
+                  if (isTerminal) {
+                    const updatedFiles = useFileStore.getState().files;
+                    const updatedFile = updatedFiles.find((f) => f.id === currentFile.id);
+                    console.log('[useFileUpload] ZIP VERIFY after update:', {
+                      fileId: currentFile.id,
+                      hasProcessFileResponse: !!updatedFile?.processFileResponse,
+                      hasFileResponse: !!updatedFile?.processFileResponse?.fileResponse,
+                      hasGcsUris: !!updatedFile?.processFileResponse?.fileResponse?.gcs_uris,
+                      error: updatedFile?.error,
+                      loading: updatedFile?.loading,
+                    });
+                  }
+                }
+              },
+              (error) => {
+                console.error('[useFileUpload] ZIP listener error for', fileName, ':', error.message);
+                const currentFiles = useFileStore.getState().files;
+                const currentFile = currentFiles.find((f) => f.uuid === job.uuid);
+                if (currentFile) {
+                  setFileError(currentFile.id, error.message);
+                }
+              },
+              () => {
+                console.log('[useFileUpload] ZIP listener complete for', fileName);
+              }
+            );
           }
-        );
+        });
+      } else {
+        // No jobs returned - mark all preview files as error
+        console.error('[useFileUpload] No jobs returned from processZipFile');
+        const currentFiles = useFileStore.getState().files;
+        currentFiles
+          .filter((f) => f.isPreviewOnly && Object.values(fileUUIDMap).includes(f.uuid || ''))
+          .forEach((f) => {
+            setFileError(f.id, 'Processing failed');
+          });
       }
     } catch (error) {
+      console.error('[useFileUpload] uploadArchiveFile error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-      setFileError(file.id, errorMessage);
+      // Mark the original file as error if it still exists
+      const currentFiles = useFileStore.getState().files;
+      const originalFile = currentFiles.find((f) => f.id === file.id);
+      if (originalFile) {
+        setFileError(file.id, errorMessage);
+      }
+      addToast({
+        label: errorMessage,
+        variant: 'danger',
+      });
     }
-  }, [updateFile, setFileError, setFileProgress]);
+  }, [addFiles, removeFile, replacePreviewFiles, updateFile, setFileError, addToast]);
 
   // Process and upload files
   const processFiles = useCallback(async (newFiles: FileAttachment[]) => {

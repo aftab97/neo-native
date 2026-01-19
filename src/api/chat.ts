@@ -88,7 +88,17 @@ export const useMutateChatPrompt = () => {
 
       // Get files from store and filter out files with errors (matching web app)
       const filesFromStore = useFileStore.getState().files;
+      console.log('[Chat] Files from store:', filesFromStore.map(f => ({
+        id: f.id,
+        name: f.name,
+        error: f.error,
+        loading: f.loading,
+        hasProcessFileResponse: !!f.processFileResponse,
+        hasGcsUris: !!f.processFileResponse?.fileResponse?.gcs_uris,
+        gcsUris: f.processFileResponse?.fileResponse?.gcs_uris,
+      })));
       const validFiles = filesFromStore.filter((file) => !file.error);
+      console.log('[Chat] Valid files after filter:', validFiles.length);
 
       // Use cacheAgent for cache key if provided, otherwise fall back to agent
       const agentForCache = cacheAgent ?? agent;
