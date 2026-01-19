@@ -27,6 +27,7 @@ export { ThumbsUpIcon } from './CommonIcons';
 export { ThumbsDownIcon } from './CommonIcons';
 export { ThumbsUpFilledIcon } from './CommonIcons';
 export { ThumbsDownFilledIcon } from './CommonIcons';
+export { CheckIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

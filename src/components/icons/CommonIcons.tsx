@@ -330,3 +330,15 @@ export const ThumbsDownFilledIcon: React.FC<IconProps> = ({ size = 24, color = '
     />
   </Svg>
 );
+
+export const CheckIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M20 6L9 17l-5-5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);

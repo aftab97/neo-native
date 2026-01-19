@@ -15,6 +15,7 @@ import { useLayoutStore, usePopupStore } from '../../store';
 import { useMutateSendFeedback } from '../../api';
 import {
   CopyIcon,
+  CheckIcon,
   ThumbsUpIcon,
   ThumbsDownIcon,
   ThumbsUpFilledIcon,
@@ -291,7 +292,11 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
           onPress={handleCopy}
           accessibilityLabel={copied ? 'Copied' : 'Copy'}
         >
-          <CopyIcon size={20} color={copied ? colors.blue['600'] : iconColor} />
+          {copied ? (
+            <CheckIcon size={20} color={iconColor} />
+          ) : (
+            <CopyIcon size={20} color={iconColor} />
+          )}
         </TouchableOpacity>
 
         {(!feedbackType || feedbackType === 'positive' || !disableThumbsUp) && (
