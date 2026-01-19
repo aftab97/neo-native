@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { apiFetch, apiFetchJson } from './fetch';
 import { queryKeys } from './queryClient';
 import { ENDPOINTS } from '../config/api';
@@ -9,6 +9,11 @@ import {
   filterActionCardUserMessages,
   shouldHideTitle,
 } from '../utils/filterActionCards';
+import { useGetUser } from './user';
+import { useMemo } from 'react';
+
+// Pagination constants
+const DEFAULT_PAGE_LIMIT = 20;
 
 interface HistoryTitlesResponse {
   sessions: Array<{
@@ -16,28 +21,45 @@ interface HistoryTitlesResponse {
     session_title: string | null;
     last_updated: string | null;
   }>;
+  nextCursor?: string | null;
+  hasNext?: boolean;
+}
+
+interface ChatTitleItem {
+  session_id: string;
+  title: string;
+  updated_at: string;
+  created_at: string;
+}
+
+interface TitlesPage {
+  sessions: ChatTitleItem[];
+  nextCursor: string | null;
+  hasNext: boolean;
 }
 
 /**
- * Fetch chat history titles (recent conversations)
+ * Fetch chat history titles with infinite scrolling support
  */
 export const useGetChatTitles = () => {
-  const queryClient = useQueryClient();
+  // Get user data from the user query (this ensures we wait for user to load)
+  const { data: user } = useGetUser();
+  const userEmail = user?.email;
 
-  return useQuery({
-    queryKey: queryKeys.chatTitles,
-    queryFn: async () => {
-      // Get user email from cache
-      const user = queryClient.getQueryData<{ email: string }>(queryKeys.user);
-
-      if (!user?.email) {
-        return [];
+  const infiniteQuery = useInfiniteQuery<TitlesPage, Error>({
+    queryKey: [...queryKeys.chatTitles, userEmail],
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam = null }) => {
+      if (!userEmail) {
+        return { sessions: [], nextCursor: null, hasNext: false };
       }
 
       const response = await apiFetch(ENDPOINTS.HISTORY_TITLES, {
         method: 'POST',
         body: JSON.stringify({
-          user_id: user.email,
+          user_id: userEmail,
+          limit: DEFAULT_PAGE_LIMIT,
+          cursor: pageParam,
         }),
       });
 
@@ -48,9 +70,8 @@ export const useGetChatTitles = () => {
       const data: HistoryTitlesResponse = await response.json();
 
       // Map to ChatHistory format and filter/normalize titles
-      return (data.sessions || [])
+      const sessions = (data.sessions || [])
         .map((session) => {
-          // Normalize the title (extract meaningful text from JSON if needed)
           const normalisedTitle = normaliseActionCardTitle(session.session_title);
           return {
             session_id: session.session_id,
@@ -59,11 +80,35 @@ export const useGetChatTitles = () => {
             created_at: session.last_updated || '',
           };
         })
-        // Filter out sessions where title is still just JSON or empty
         .filter((session) => !shouldHideTitle(session.title));
+
+      return {
+        sessions,
+        nextCursor: data.nextCursor ?? null,
+        hasNext: data.hasNext ?? false,
+      };
     },
+    enabled: !!userEmail,
     staleTime: 1000 * 60 * 2, // 2 minutes
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNext ? lastPage.nextCursor : undefined,
   });
+
+  // Flatten all pages into a single array
+  const flattenedData = useMemo(() => {
+    if (!infiniteQuery.data?.pages) return [];
+    return infiniteQuery.data.pages.flatMap((page) => page.sessions);
+  }, [infiniteQuery.data?.pages]);
+
+  return {
+    data: flattenedData,
+    isLoading: infiniteQuery.isLoading,
+    isRefetching: infiniteQuery.isRefetching,
+    isFetchingNextPage: infiniteQuery.isFetchingNextPage,
+    hasNextPage: infiniteQuery.hasNextPage,
+    fetchNextPage: infiniteQuery.fetchNextPage,
+    refetch: infiniteQuery.refetch,
+  };
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
@@ -39,7 +40,15 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { selectedAgent } = useAgentStore();
   const { resetAll, resetForAgent } = useResetChat();
-  const { data: chatTitles = [], refetch, isRefetching } = useGetChatTitles();
+  const {
+    data: chatTitles = [],
+    refetch,
+    isRefetching,
+    isLoading: isLoadingChats,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetChatTitles();
 
   // Notifications
   const {
@@ -92,79 +101,116 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
     navigation.navigate("Agent", { agentId });
   };
 
-  const renderHistoryTab = () => (
-    <ScrollView
-      style={styles.scrollContainer}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefetching}
-          onRefresh={refetch}
-          tintColor={accentColor}
-          colors={[accentColor]}
-        />
+  // Handler for loading more chats when scrolling near the bottom
+  const handleChatsScroll = useCallback(
+    (event: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+      const paddingToBottom = 50;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+      if (isCloseToBottom && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
       }
-    >
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
+
+  const renderHistoryTab = () => (
+    <View style={styles.scrollContainer}>
       {/* Recent Chats Section */}
-      <View style={styles.section}>
+      <View style={styles.sectionContainer}>
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
           Recent Chats
         </Text>
-        {chatTitles.length === 0 ? (
+        {isLoadingChats ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={accentColor} />
+          </View>
+        ) : chatTitles.length === 0 ? (
           <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
             No recent chats
           </Text>
         ) : (
-          chatTitles.slice(0, 10).map((chat) => (
-            <TouchableOpacity
-              key={chat.session_id}
-              style={[styles.listItem, { backgroundColor: "transparent" }]}
-              onPress={() => handleChatPress(chat.session_id)}
-              accessibilityLabel={`Open chat: ${chat.title}`}
-              accessibilityRole="button"
-            >
-              <ChatIcon size={18} color={secondaryTextColor} />
-              <Text
-                style={[styles.listItemText, { color: textColor }]}
-                numberOfLines={1}
+          <ScrollView
+            style={styles.sectionScrollView}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleChatsScroll}
+            scrollEventThrottle={400}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                tintColor={accentColor}
+                colors={[accentColor]}
+              />
+            }
+          >
+            {chatTitles.map((chat) => (
+              <TouchableOpacity
+                key={chat.session_id}
+                style={[styles.listItem, { backgroundColor: "transparent" }]}
+                onPress={() => handleChatPress(chat.session_id)}
+                accessibilityLabel={`Open chat: ${chat.title}`}
+                accessibilityRole="button"
               >
-                {chat.title || "Untitled Chat"}
-              </Text>
-            </TouchableOpacity>
-          ))
+                <View style={styles.iconContainer}>
+                  <ChatIcon size={18} color={secondaryTextColor} />
+                </View>
+                <Text
+                  style={[styles.listItemText, { color: textColor }]}
+                  numberOfLines={1}
+                >
+                  {chat.title || "Untitled Chat"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {isFetchingNextPage && (
+              <View style={styles.loadingFooter}>
+                <ActivityIndicator size="small" color={accentColor} />
+              </View>
+            )}
+          </ScrollView>
         )}
       </View>
 
       {/* Agents Section */}
-      <View style={styles.section}>
+      <View style={styles.sectionContainer}>
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
           Agents
         </Text>
-        {AGENTS.map((agent) => (
-          <TouchableOpacity
-            key={agent.id}
-            style={[
-              styles.listItem,
-              {
-                backgroundColor:
-                  selectedAgent === agent.id ? hoverBg : "transparent",
-              },
-            ]}
-            onPress={() => handleAgentPress(agent.id)}
-            accessibilityLabel={`Open ${agent.label} agent`}
-            accessibilityRole="button"
-          >
-            <AgentIcon type={agent.iconType} size={24} />
-            <Text
-              style={[styles.listItemText, { color: textColor }]}
-              numberOfLines={1}
+        <ScrollView
+          style={styles.sectionScrollView}
+          showsVerticalScrollIndicator={false}
+        >
+          {AGENTS.map((agent) => (
+            <TouchableOpacity
+              key={agent.id}
+              style={[
+                styles.listItem,
+                {
+                  backgroundColor:
+                    selectedAgent === agent.id ? hoverBg : "transparent",
+                },
+              ]}
+              onPress={() => handleAgentPress(agent.id)}
+              accessibilityLabel={`Open ${agent.label} agent`}
+              accessibilityRole="button"
             >
-              {agent.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <View style={styles.iconContainer}>
+                <AgentIcon type={agent.iconType} size={24} />
+              </View>
+              <Text
+                style={[styles.listItemText, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {agent.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
-    </ScrollView>
+    </View>
   );
 
   const renderNotificationsTab = () => (
@@ -374,6 +420,27 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  sectionContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sectionScrollView: {
+    flex: 1,
+  },
+  iconContainer: {
+    width: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingContainer: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  loadingFooter: {
+    paddingVertical: 12,
+    alignItems: "center",
   },
   sectionTitle: {
     fontSize: 12,
