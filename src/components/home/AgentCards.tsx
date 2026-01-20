@@ -11,7 +11,7 @@ import { useLayoutStore } from "../../store";
 import { useResetChat } from "../../hooks";
 import { AGENTS } from "../../config/agents";
 import { AgentMetadata } from "../../types/agent";
-import { AgentIcon } from "../icons";
+import { AnalystIcon, AgentLibraryLogo } from "../icons";
 import { colors } from "../../theme/colors";
 
 interface AgentCardItemProps {
@@ -30,25 +30,32 @@ const AgentCardItem: React.FC<AgentCardItemProps> = ({
   const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
   const borderColor = isDarkTheme ? colors.gray['800'] : colors.gray['200'];
 
+  // Determine if this is an analyst agent (same logic as web app)
+  const isAnalystAgent = agent.categoryName?.toLowerCase().includes('analyst');
+
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor, borderColor }]}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={`Open ${agent.label} agent`}
+      accessibilityLabel={`Open ${agent.title} agent`}
       accessibilityRole="button"
     >
       <View style={styles.iconContainer}>
-        <AgentIcon type={agent.iconType} size={48} />
+        {isAnalystAgent ? (
+          <AnalystIcon size={48} />
+        ) : (
+          <AgentLibraryLogo size={48} />
+        )}
       </View>
       <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
-        {agent.label}
+        {agent.title}
       </Text>
       <Text
         style={[styles.description, { color: secondaryTextColor }]}
         numberOfLines={2}
       >
-        {agent.description}
+        {agent.text}
       </Text>
     </TouchableOpacity>
   );

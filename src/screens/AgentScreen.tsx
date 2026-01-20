@@ -35,9 +35,9 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
 
     // Update navigation title
     navigation.setOptions({
-      title: agent?.label || 'Agent',
+      title: agent?.title || 'Agent',
     });
-  }, [agentId, agent?.label]);
+  }, [agentId, agent?.title]);
 
   const handleSend = (message: string) => {
     // Use existing session ID (from file uploads) or create a new one
@@ -88,7 +88,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = () => {
 
       <ChatInput
         onSend={handleSend}
-        placeholder={`Ask ${agent.label}...`}
+        placeholder={`Ask ${agent.title}...`}
         isLoading={chatMutation.isPending}
       />
     </KeyboardAvoidingView>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useLayoutStore } from '../../store';
-import { AgentMetadata } from '../../types/agent';
+import { AgentMetadata, AgentCardItem } from '../../types/agent';
 import { AgentCard } from './AgentCard';
-import { AgentIcon } from '../icons';
+import { AnalystIcon, AgentLibraryLogo } from '../icons';
 import { colors } from '../../theme/colors';
 
 interface AgentStartScreenProps {
@@ -13,7 +13,7 @@ interface AgentStartScreenProps {
 
 /**
  * Agent start screen - matches web app styling
- * Shows agent icon, name, description and suggestion cards
+ * Shows agent icon, title, subtitle, description and suggestion cards
  */
 export const AgentStartScreen: React.FC<AgentStartScreenProps> = ({
   agent,
@@ -23,9 +23,15 @@ export const AgentStartScreen: React.FC<AgentStartScreenProps> = ({
 
   const textColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
   const secondaryTextColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
+  const subtitleColor = isDarkTheme ? colors.blue['500'] : colors.blue['700'];
 
-  const handleCardPress = (title: string) => {
-    onSuggestionPress(title);
+  // Determine if this is an analyst agent (same logic as web app)
+  const isAnalystAgent = agent.categoryName?.toLowerCase().includes('analyst');
+
+  // Handle card click - join all item.text values (matching web app behavior)
+  const handleCardClick = (items: readonly AgentCardItem[]) => {
+    const content = items.map((item) => item.text).join('\n');
+    onSuggestionPress(content);
   };
 
   return (
@@ -37,25 +43,31 @@ export const AgentStartScreen: React.FC<AgentStartScreenProps> = ({
       {/* Agent Header */}
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <AgentIcon type={agent.iconType} size={80} />
+          {isAnalystAgent ? (
+            <AnalystIcon size={64} />
+          ) : (
+            <AgentLibraryLogo size={64} />
+          )}
         </View>
-        <Text style={[styles.title, { color: textColor }]}>{agent.label}</Text>
+        <Text style={[styles.title, { color: textColor }]}>{agent.title}</Text>
+        {agent.subTitle && (
+          <Text style={[styles.subTitle, { color: subtitleColor }]}>
+            {agent.subTitle}
+          </Text>
+        )}
         <Text style={[styles.description, { color: secondaryTextColor }]}>
-          {agent.description}
+          {agent.text}
         </Text>
       </View>
 
       {/* Suggestion Cards */}
       {agent.cardData && agent.cardData.length > 0 && (
         <View style={styles.cardsContainer}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-            Suggestions
-          </Text>
           {agent.cardData.map((card, index) => (
             <AgentCard
               key={index}
               config={card}
-              onPress={() => handleCardPress(card.title)}
+              onPress={() => handleCardClick(card.items)}
             />
           ))}
         </View>
@@ -85,6 +97,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: '400',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
   description: {
     fontSize: 16,
     textAlign: 'center',
@@ -92,12 +110,5 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
   },
 });

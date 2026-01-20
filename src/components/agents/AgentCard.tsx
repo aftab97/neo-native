@@ -29,13 +29,13 @@ export const AgentCard: React.FC<AgentCardProps> = ({ config, onPress }) => {
       </Text>
       {config.items && config.items.length > 0 && (
         <View style={styles.itemsContainer}>
-          {config.items.slice(0, 2).map((item, index) => (
+          {config.items.slice(0, 2).map((item) => (
             <Text
-              key={index}
+              key={item.id}
               style={[styles.itemText, { color: secondaryTextColor }]}
               numberOfLines={2}
             >
-              • {item.description}
+              {item.text}
             </Text>
           ))}
         </View>

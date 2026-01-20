@@ -24,7 +24,8 @@ import { AGENTS } from "../../config/agents";
 import {
   PlusIcon,
   ChatIcon,
-  AgentIcon,
+  AnalystIcon,
+  AgentLibraryLogo,
   NeoLogo,
   BellIcon,
   HistoryIcon,
@@ -200,31 +201,38 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
           style={styles.sectionScrollView}
           showsVerticalScrollIndicator={false}
         >
-          {AGENTS.map((agent) => (
-            <TouchableOpacity
-              key={agent.id}
-              style={[
-                styles.listItem,
-                {
-                  backgroundColor:
-                    selectedAgent === agent.id ? hoverBg : "transparent",
-                },
-              ]}
-              onPress={() => handleAgentPress(agent.id)}
-              accessibilityLabel={`Open ${agent.label} agent`}
-              accessibilityRole="button"
-            >
-              <View style={styles.iconContainer}>
-                <AgentIcon type={agent.iconType} size={24} />
-              </View>
-              <Text
-                style={[styles.listItemText, { color: textColor }]}
-                numberOfLines={1}
+          {AGENTS.map((agent) => {
+            const isAnalystAgent = agent.categoryName?.toLowerCase().includes('analyst');
+            return (
+              <TouchableOpacity
+                key={agent.id}
+                style={[
+                  styles.listItem,
+                  {
+                    backgroundColor:
+                      selectedAgent === agent.id ? hoverBg : "transparent",
+                  },
+                ]}
+                onPress={() => handleAgentPress(agent.id)}
+                accessibilityLabel={`Open ${agent.title} agent`}
+                accessibilityRole="button"
               >
-                {agent.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.iconContainer}>
+                  {isAnalystAgent ? (
+                    <AnalystIcon size={24} />
+                  ) : (
+                    <AgentLibraryLogo size={24} />
+                  )}
+                </View>
+                <Text
+                  style={[styles.listItemText, { color: textColor }]}
+                  numberOfLines={1}
+                >
+                  {agent.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     </View>

@@ -1,6 +1,12 @@
+export interface AgentCardItem {
+  id: string;
+  text: string;
+}
+
 export interface AgentCardConfig {
   title: string;
-  items?: { description: string }[];
+  items: readonly AgentCardItem[];
+  variant?: 'promptStarters';
 }
 
 /**
@@ -19,11 +25,18 @@ export type AgentIconType =
 export interface AgentMetadata {
   id: string;
   name: string;
-  label: string;
-  description: string;
+  /** Display title shown on agent page (matches web app's 'title') */
+  title: string;
+  /** Subtitle shown below title (e.g., beta notice) */
+  subTitle?: string;
+  /** Full description text for the agent */
+  text: string;
   /** Icon type matching web app icons */
   iconType: AgentIconType;
+  /** Card data for suggestion cards */
   cardData?: readonly AgentCardConfig[];
+  /** Category name for grouping */
+  categoryName?: string;
 }
 
 export const AGENT_NAMES = {
@@ -34,14 +47,18 @@ export const AGENT_NAMES = {
   Finance: 'finance',
   Knowledge: 'knowledge',
   Utility: 'utility',
-  Data: 'aionbi',
+  data: 'aionbi',
   Action: 'action',
   Unleash: 'unleash',
   FinancePnLGbi: 'financepnlgbi',
   FinancePnLHfm: 'financepnlhfm',
+  FinanceFteGbi: 'financeftegbi',
   FinanceRevenueGbi: 'financerevenuegbi',
   FinanceRevenuePbcs: 'financerevenuepbcs',
   SalesDataGbi: 'salesdatagbi',
+  GtdDemandGbi: 'gtddemandgbi',
+  GtdSupplyGbi: 'gtdsupplygbi',
+  GtdSkillsGbi: 'gtdskillsgbi',
 } as const;
 
 export type AgentName = (typeof AGENT_NAMES)[keyof typeof AGENT_NAMES];

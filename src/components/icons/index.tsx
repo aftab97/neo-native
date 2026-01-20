@@ -3,6 +3,7 @@ export { RFPProposalIcon } from './RFPProposalIcon';
 export { AnalystIcon } from './AnalystIcon';
 export { InternalAuditIcon } from './InternalAuditIcon';
 export { HandHeartIcon } from './HandHeartIcon';
+export { AgentLibraryLogo } from './AgentLibraryLogo';
 
 // Common Icons
 export { PlusIcon } from './CommonIcons';
