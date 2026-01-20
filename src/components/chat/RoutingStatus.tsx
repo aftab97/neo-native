@@ -4,19 +4,18 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  LayoutAnimation,
-  Platform,
-  UIManager,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 import { t } from 'ttag';
 import { useLayoutStore } from '../../store';
 import { ShuffleIcon } from '../icons';
 import { colors } from '../../theme/colors';
-
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 /**
  * Custom hook to persist the last non-empty status
@@ -116,6 +115,9 @@ export const RoutingStatus: React.FC<RoutingStatusProps> = ({
   const [expanded, setExpanded] = useState(false);
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
+  // Animation values
+  const expandProgress = useSharedValue(0);
+
   // Persist status so it remains visible after SSE streaming completes
   const persistedStatus = usePersistedStatus(status);
 
@@ -132,6 +134,20 @@ export const RoutingStatus: React.FC<RoutingStatusProps> = ({
   // Check if currently streaming (has live status updates)
   const isStreaming = status && status.length > 0;
 
+  const displayStatus: string[] = Array.isArray(persistedStatus) ? persistedStatus : [];
+  const statusCount = displayStatus.length;
+  const hasDisplayStatus = statusCount > 0;
+  const lastIndex = statusCount - 1;
+
+  // Animated styles for expanded content
+  const expandedAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: expandProgress.value,
+      maxHeight: interpolate(expandProgress.value, [0, 1], [0, 500]),
+      marginTop: interpolate(expandProgress.value, [0, 1], [0, 12]),
+    };
+  });
+
   const renderStatusLine = (statusText: string, showEllipsis: boolean) => {
     if ((statusText || '').toLowerCase().includes('neo is generating your answer')) {
       const base = statusText.replace(/\.*$/, '');
@@ -145,11 +161,6 @@ export const RoutingStatus: React.FC<RoutingStatusProps> = ({
     return <Text style={[styles.statusText, { color: textColor }]}>{statusText}</Text>;
   };
 
-  const displayStatus: string[] = Array.isArray(persistedStatus) ? persistedStatus : [];
-  const statusCount = displayStatus.length;
-  const hasDisplayStatus = statusCount > 0;
-  const lastIndex = statusCount - 1;
-
   const patchLastStatusLine = (value: string): string => {
     if (!web) return value;
     if ((value || '').toLowerCase().includes('answer generated')) {
@@ -162,7 +173,14 @@ export const RoutingStatus: React.FC<RoutingStatusProps> = ({
   const displayLastStatus = patchLastStatusLine(rawLastStatus);
 
   const handlePress = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const toValue = expanded ? 0 : 1;
+
+    // Animate expand/collapse
+    expandProgress.value = withTiming(toValue, {
+      duration: 450,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+    });
+
     setExpanded((prev) => !prev);
   };
 
@@ -184,32 +202,32 @@ export const RoutingStatus: React.FC<RoutingStatusProps> = ({
         <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
           <ShuffleIcon size={12} color={iconColor} />
         </View>
-        {renderStatusLine(displayLastStatus, !expanded)}
+        <View style={styles.statusTextContainer}>
+          {renderStatusLine(displayLastStatus, !expanded)}
+        </View>
       </View>
 
-      {/* Expanded content */}
-      {expanded && (
-        <View style={styles.expandedContainer}>
-          <View style={[styles.statusList, { borderLeftColor: borderColor }]}>
-            {displayStatus.map((item, index) => {
-              const text = index === lastIndex ? patchLastStatusLine(item) : item;
-              const isLast = index === lastIndex;
+      {/* Expanded content with animation */}
+      <Animated.View style={[styles.expandedContainer, expandedAnimatedStyle]}>
+        <View style={[styles.statusList, { borderLeftColor: borderColor }]}>
+          {displayStatus.map((item, index) => {
+            const text = index === lastIndex ? patchLastStatusLine(item) : item;
+            const isLast = index === lastIndex;
 
-              return (
-                <Text
-                  key={`${index}-${text}`}
-                  style={[
-                    styles.expandedStatusText,
-                    { color: isLast ? successColor : textColor },
-                  ]}
-                >
-                  {text}
-                </Text>
-              );
-            })}
-          </View>
+            return (
+              <Animated.Text
+                key={`${index}-${text}`}
+                style={[
+                  styles.expandedStatusText,
+                  { color: isLast ? successColor : textColor },
+                ]}
+              >
+                {text}
+              </Animated.Text>
+            );
+          })}
         </View>
-      )}
+      </Animated.View>
     </TouchableOpacity>
   );
 };
@@ -219,6 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',
@@ -232,13 +251,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusText: {
-    fontSize: 14,
+  statusTextContainer: {
     flex: 1,
   },
+  statusText: {
+    fontSize: 14,
+  },
   expandedContainer: {
-    marginTop: 12,
     paddingLeft: 10,
+    overflow: 'hidden',
   },
   statusList: {
     borderLeftWidth: 1,
