@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { t } from 'ttag';
 import { useLayoutStore } from '../../store';
 import { useGetUser } from '../../api';
 import { colors, gradients } from '../../theme/colors';
@@ -47,21 +48,20 @@ export const WelcomeSection: React.FC = () => {
   const subtitleColor = isDarkTheme ? colors.gray['000'] : colors.gray['900'];
 
   const firstName = formatName(user?.firstname || '');
-  const displayName = firstName || 'there';
 
   return (
     <View style={styles.container}>
       {/* Greeting line - lighter weight */}
       <View style={styles.greetingContainer}>
         <Text style={[styles.greeting, { color: textColor }]}>
-          Hello {displayName}, welcome to{' '}
+          {t`Hello ${firstName}, welcome to `}
         </Text>
         <GradientNeoText />
       </View>
 
       {/* Subtitle - larger and bolder */}
       <Text style={[styles.subtitle, { color: subtitleColor }]}>
-        Capgemini's Intelligence Platform
+        {t`Capgemini's Intelligence Platform`}
       </Text>
     </View>
   );

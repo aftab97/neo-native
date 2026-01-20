@@ -9,7 +9,9 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
+import { t } from 'ttag';
+import { useLayoutStore, useLocaleStore } from '../../store';
+import { useEffectiveLocale, type AvailableLocale } from '../../hooks';
 import { useGetUser, useGetProfilePicture, useDeleteAllChats } from '../../api';
 import { clearStoredJwt } from '../../api';
 import { SlideoutDrawer } from '../common';
@@ -25,9 +27,10 @@ import {
   SunIcon,
   TrashIcon,
   LogoutIcon,
-  ChevronRightIcon,
 } from '../icons';
 import { colors } from '../../theme/colors';
+
+type LocaleOption = 'auto' | AvailableLocale;
 
 interface SettingsDrawerProps {
   visible: boolean;
@@ -78,11 +81,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const theme = useLayoutStore((state) => state.theme);
   const setTheme = useLayoutStore((state) => state.setTheme);
 
+  const locale = useLocaleStore((state) => state.locale);
+  const setLocale = useLocaleStore((state) => state.setLocale);
+  const effectiveLocale = useEffectiveLocale();
+
   const { data: userInfo, isLoading: isLoadingUser } = useGetUser();
   const { data: profilePictureData } = useGetProfilePicture();
   const deleteAllChatsMutation = useDeleteAllChats();
 
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleLanguageChange = (newLocale: LocaleOption) => {
+    setLocale(newLocale);
+  };
 
   // Theme colors
   const backgroundColor = isDarkTheme ? colors.gray['900'] : colors.gray['000'];
@@ -99,28 +110,28 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
   const handleDeleteAllChats = () => {
     if (!userInfo?.email) {
-      Alert.alert('Error', 'Unable to delete chats. User info not available.');
+      Alert.alert(t`Error`, t`Unable to delete chats. User info not available.`);
       return;
     }
 
     Alert.alert(
-      'Delete All Chats',
-      'Are you sure you want to delete all your chat history? This action cannot be undone.',
+      t`Delete all chats`,
+      t`Are you sure you want to delete all chat history?`,
       [
         {
-          text: 'Cancel',
+          text: t`Cancel`,
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t`Delete`,
           style: 'destructive',
           onPress: async () => {
             setIsDeleting(true);
             try {
               await deleteAllChatsMutation.mutateAsync({ userEmail: userInfo.email });
-              Alert.alert('Success', 'All chats have been deleted.');
+              Alert.alert(t`Success`, t`All chats have been deleted.`);
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete chats. Please try again.');
+              Alert.alert(t`Error`, t`Failed to delete chats. Please try again.`);
             } finally {
               setIsDeleting(false);
             }
@@ -132,22 +143,22 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t`Log out`,
+      t`Are you sure you want to log out?`,
       [
         {
-          text: 'Cancel',
+          text: t`Cancel`,
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t`Log out`,
           style: 'destructive',
           onPress: async () => {
             try {
               await clearStoredJwt();
               // The app should handle navigation to login screen via auth state change
             } catch (error) {
-              Alert.alert('Error', 'Failed to logout. Please try again.');
+              Alert.alert(t`Error`, t`Failed to log out. Please try again.`);
             }
           },
         },
@@ -216,7 +227,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       <View style={styles.accountItemContent}>
         <Text style={[styles.accountLabel, { color: secondaryText }]}>{label}</Text>
         <Text style={[styles.accountValue, { color: textColor }]} numberOfLines={1}>
-          {value || 'Not available'}
+          {value || t`Not available`}
         </Text>
       </View>
     </View>
@@ -249,6 +260,33 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     );
   };
 
+  const renderLanguageOption = (localeOption: LocaleOption, label: string) => {
+    const isSelected = locale === localeOption;
+    return (
+      <TouchableOpacity
+        key={localeOption}
+        style={[
+          styles.languageOption,
+          {
+            backgroundColor: isSelected ? accentColor : surfaceColor,
+            borderColor: isSelected ? accentColor : borderColor,
+          },
+        ]}
+        onPress={() => handleLanguageChange(localeOption)}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.languageOptionText,
+            { color: isSelected ? '#ffffff' : textColor },
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SlideoutDrawer
       visible={visible}
@@ -259,7 +297,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     >
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Text style={[styles.headerTitle, { color: textColor }]}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: textColor }]}>{t`Settings`}</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <CloseIcon size={24} color={secondaryText} />
         </TouchableOpacity>
@@ -291,31 +329,31 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryText }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>{t`Account`}</Text>
           <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
             {renderAccountItem(
               <EmailIcon size={20} color={accentColor} />,
-              'Email',
+              t`Email`,
               userInfo?.email
             )}
             {renderAccountItem(
               <PhoneIcon size={20} color={accentColor} />,
-              'Phone',
+              t`Phone`,
               undefined // Phone number not accessible from device for privacy reasons
             )}
             {renderAccountItem(
               <MapPinIcon size={20} color={accentColor} />,
-              'Location',
+              t`Location`,
               userInfo?.country
             )}
             {renderAccountItem(
               <BuildingIcon size={20} color={accentColor} />,
-              'BU',
+              t`BU`,
               userInfo?.BU
             )}
             {renderAccountItem(
               <HashIcon size={20} color={accentColor} />,
-              'GGID',
+              t`GGID`,
               userInfo?.ggid
             )}
           </View>
@@ -323,21 +361,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         {/* General Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryText }]}>General</Text>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>{t`General`}</Text>
           <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
             {/* Language */}
-            <TouchableOpacity style={styles.settingsRow} activeOpacity={0.7}>
-              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
-                <LanguageIcon size={20} color={accentColor} />
-              </View>
-              <View style={styles.settingsRowContent}>
-                <Text style={[styles.settingsLabel, { color: textColor }]}>Language</Text>
-                <View style={styles.settingsRowRight}>
-                  <Text style={[styles.settingsValue, { color: secondaryText }]}>English</Text>
-                  <ChevronRightIcon size={20} color={secondaryText} />
+            <View style={styles.languageSection}>
+              <View style={styles.languageLabelRow}>
+                <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                  <LanguageIcon size={20} color={accentColor} />
                 </View>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>{t`Language`}</Text>
               </View>
-            </TouchableOpacity>
+              <View style={styles.languageOptions}>
+                {renderLanguageOption('auto', t`Auto Detect`)}
+                {renderLanguageOption('en', 'English')}
+                {renderLanguageOption('de', 'Deutsch')}
+                {renderLanguageOption('es', 'Español')}
+                {renderLanguageOption('fr', 'Français')}
+                {renderLanguageOption('pl', 'Polski')}
+              </View>
+            </View>
 
             {/* Theme */}
             <View style={styles.themeSection}>
@@ -349,12 +391,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <SunIcon size={20} color={accentColor} />
                   )}
                 </View>
-                <Text style={[styles.settingsLabel, { color: textColor }]}>Theme</Text>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>{t`Theme`}</Text>
               </View>
               <View style={styles.themeOptions}>
-                {renderThemeOption('light', 'Light', <SunIcon size={16} color={theme === 'light' ? '#ffffff' : textColor} />)}
-                {renderThemeOption('dark', 'Dark', <MoonIcon size={16} color={theme === 'dark' ? '#ffffff' : textColor} />)}
-                {renderThemeOption('system', 'System', <SettingsIcon size={16} color={theme === 'system' ? '#ffffff' : textColor} />)}
+                {renderThemeOption('light', t`Light`, <SunIcon size={16} color={theme === 'light' ? '#ffffff' : textColor} />)}
+                {renderThemeOption('dark', t`Dark`, <MoonIcon size={16} color={theme === 'dark' ? '#ffffff' : textColor} />)}
+                {renderThemeOption('system', t`System default`, <SettingsIcon size={16} color={theme === 'system' ? '#ffffff' : textColor} />)}
               </View>
             </View>
 
@@ -370,7 +412,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               </View>
               <View style={styles.settingsRowContent}>
                 <Text style={[styles.settingsLabel, { color: dangerColor }]}>
-                  Delete All Chats
+                  {t`Delete all chats`}
                 </Text>
                 {isDeleting && (
                   <ActivityIndicator size="small" color={dangerColor} />
@@ -388,7 +430,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <LogoutIcon size={20} color={dangerColor} />
               </View>
               <View style={styles.settingsRowContent}>
-                <Text style={[styles.settingsLabel, { color: dangerColor }]}>Logout</Text>
+                <Text style={[styles.settingsLabel, { color: dangerColor }]}>{t`Log out`}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -536,6 +578,31 @@ const styles = StyleSheet.create({
   },
   settingsValue: {
     fontSize: 14,
+  },
+  languageSection: {
+    padding: 12,
+  },
+  languageLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  languageOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginLeft: 48,
+  },
+  languageOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  languageOptionText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   themeSection: {
     padding: 12,

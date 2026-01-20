@@ -9,6 +9,7 @@ import {
   Text,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { t } from 'ttag';
 import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../store';
 import { PlusIcon } from '../icons';
 import { AttachmentSlideout } from './AttachmentSlideout';
@@ -29,7 +30,7 @@ interface ChatInputProps {
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   onCancel,
-  placeholder = 'Ask Neo...',
+  placeholder = t`Ask Neo`,
   isLoading = false,
   isLiveChatActive = false,
   onLiveChatSend,
@@ -113,7 +114,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Use different placeholder when live chat is active
   const effectivePlaceholder = isLiveChatActive
-    ? 'Message live agent...'
+    ? t`Ask our Live Agent`
     : placeholder;
 
   const handleCancel = () => {

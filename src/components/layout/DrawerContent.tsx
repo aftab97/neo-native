@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useNavigation } from "@react-navigation/native";
+import { t } from "ttag";
 import {
   useLayoutStore,
   useAgentStore,
@@ -137,7 +138,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
           ]}
         >
           <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-            Recent Chats
+            {t`Recent chats `}
           </Text>
           {isLoadingChats ? (
             <View style={styles.loadingContainer}>
@@ -145,7 +146,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
             </View>
           ) : !hasChats ? (
             <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-              No recent chats
+              {t`No recent chats`}
             </Text>
           ) : (
             <ScrollView
@@ -177,7 +178,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
                     style={[styles.listItemText, { color: textColor }]}
                     numberOfLines={1}
                   >
-                    {chat.title || "Untitled Chat"}
+                    {chat.title || t`Untitled Chat`}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -193,7 +194,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
       {/* Agents Section */}
       <View style={styles.sectionContainer}>
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-          Agents
+          {t`Agents`}
         </Text>
         <ScrollView
           style={styles.sectionScrollView}
@@ -247,7 +248,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
       {isLoadingNotifications ? (
         <View style={styles.centerContent}>
           <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-            Loading notifications...
+            {t`Loading...`}
           </Text>
         </View>
       ) : visibleNotifications.length === 0 ? (
@@ -259,7 +260,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
               { color: secondaryTextColor, marginTop: 12 },
             ]}
           >
-            No notifications
+            {t`No notifications`}
           </Text>
           <Text
             style={[
@@ -267,7 +268,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
               { color: secondaryTextColor, marginTop: 4 },
             ]}
           >
-            You're all caught up!
+            {t`You're all caught up!`}
           </Text>
         </View>
       ) : (
@@ -286,7 +287,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <NeoLogo width={70} height={20} color={textColor} />
         <Text style={[styles.subtitle, { color: secondaryTextColor }]}>
-          Capgemini's Intelligence Platform
+          {t`Capgemini's Intelligence Platform`}
         </Text>
       </View>
 
@@ -352,7 +353,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
         accessibilityRole="button"
       >
         <PlusIcon size={20} color="#ffffff" />
-        <Text style={styles.newChatText}>New Chat</Text>
+        <Text style={styles.newChatText}>{t`New chat`}</Text>
       </TouchableOpacity>
 
       {/* Tab Content */}

@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { t } from 'ttag';
 import { useLayoutStore, usePopupStore } from '../../store';
 import { useMutateSendFeedback } from '../../api';
 import {
@@ -31,23 +32,23 @@ interface ChatAIFeedbackProps {
   agent?: string;
 }
 
-const POSITIVE_FEEDBACK = [
-  'Accurate answer',
-  'Helpful answer',
-  'Followed instructions',
-  'Good sources',
+const getPositiveFeedback = () => [
+  t`Accurate answer`,
+  t`Helpful answer`,
+  t`Followed instructions`,
+  t`Good sources`,
 ];
 
-const NEGATIVE_FEEDBACK = [
-  'Answer generation delay',
-  "Doesn't follow the prompt or conversation history",
-  'Out of date information',
-  'Wrong or missing source',
-  'Inaccurate answer',
-  "Doesn't follow instruction",
+const getNegativeFeedback = () => [
+  t`Answer generation delay`,
+  t`Doesn't follow the prompt or conversation history`,
+  t`Out of date information`,
+  t`Wrong or missing source`,
+  t`Inaccurate answer`,
+  t`Doesn't follow instruction`,
 ];
 
-const OTHER_BTN_TEXT = 'Other';
+const getOtherBtnText = () => t`Other`;
 
 const HEADER_CONTENT_HEIGHT = 56;
 
@@ -219,7 +220,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
   };
 
   const handleOtherButtonClick = () => {
-    setSelectedBtnText(OTHER_BTN_TEXT);
+    setSelectedBtnText(getOtherBtnText());
     const newValue = !showExtraDetails;
     showExtraDetailsRef.current = newValue;
     setShowExtraDetails(newValue);
@@ -242,7 +243,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
     }
 
     const feedbackMsg = extraDetailsText || '';
-    const selectedButtonText = btnText || selectedBtnText || OTHER_BTN_TEXT;
+    const selectedButtonText = btnText || selectedBtnText || getOtherBtnText();
 
     sendFeedback.mutate({
       session_id: sessionID,
@@ -272,15 +273,15 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
     setFeedbackInputFocused(false);
   };
 
-  const feedbackOptions = feedbackType === 'positive' ? POSITIVE_FEEDBACK : NEGATIVE_FEEDBACK;
+  const feedbackOptions = feedbackType === 'positive' ? getPositiveFeedback() : getNegativeFeedback();
 
   const getTitle = () => {
-    if (selectedBtnText && selectedBtnText !== OTHER_BTN_TEXT) {
-      return 'Thanks for your feedback! Help us improve by giving a few extra details.';
+    if (selectedBtnText && selectedBtnText !== getOtherBtnText()) {
+      return t`Thanks for your feedback! Help us improve by giving a few extra details.`;
     }
     return feedbackType === 'positive'
-      ? 'What did you like about the response?'
-      : 'What went wrong - can you help understand?';
+      ? t`What did you like about the response?`
+      : t`What went wrong - can you help understand?`;
   };
 
   return (
@@ -290,7 +291,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
         <TouchableOpacity
           style={styles.iconButton}
           onPress={handleCopy}
-          accessibilityLabel={copied ? 'Copied' : 'Copy'}
+          accessibilityLabel={copied ? t`Copied` : t`Copy`}
         >
           {copied ? (
             <CheckIcon size={20} color={iconColor} />
@@ -304,7 +305,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
             style={styles.iconButton}
             onPress={() => handleFeedback('positive')}
             disabled={disableThumbsUp}
-            accessibilityLabel="Good response"
+            accessibilityLabel={t`Good response`}
           >
             {(showFeedback && feedbackType === 'positive') || disableThumbsUp ? (
               <ThumbsUpFilledIcon size={20} color={iconColor} />
@@ -319,7 +320,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
             style={styles.iconButton}
             onPress={() => handleFeedback('negative')}
             disabled={disableThumbsDown}
-            accessibilityLabel="Bad response"
+            accessibilityLabel={t`Bad response`}
           >
             {(showFeedback && feedbackType === 'negative') || disableThumbsDown ? (
               <ThumbsDownFilledIcon size={20} color={iconColor} />
@@ -358,7 +359,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
           </View>
 
           {/* Feedback option chips */}
-          {(!selectedBtnText || selectedBtnText === OTHER_BTN_TEXT) && (
+          {(!selectedBtnText || selectedBtnText === getOtherBtnText()) && (
             <View style={styles.chipsContainer}>
               {feedbackOptions.map((option) => (
                 <TouchableOpacity
@@ -381,14 +382,14 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: selectedBtnText === OTHER_BTN_TEXT ? chipSelectedBg : chipBg,
+                    backgroundColor: selectedBtnText === getOtherBtnText() ? chipSelectedBg : chipBg,
                     borderColor: chipBorder,
                   },
                 ]}
                 onPress={handleOtherButtonClick}
               >
                 <Text style={[styles.chipText, { color: textColor }]}>
-                  {OTHER_BTN_TEXT}
+                  {getOtherBtnText()}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -412,8 +413,8 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
                 style={[styles.textarea, { color: textColor }]}
                 placeholder={
                   feedbackType === 'positive'
-                    ? 'What worked well for you?'
-                    : 'What could be improved?'
+                    ? t`What worked well for you?`
+                    : t`What could be improved?`
                 }
                 placeholderTextColor={secondaryTextColor}
                 value={extraDetailsText}
@@ -448,7 +449,7 @@ export const ChatAIFeedback: React.FC<ChatAIFeedbackProps> = ({
                       },
                     ]}
                   >
-                    Send
+                    {t`Send`}
                   </Text>
                 </TouchableOpacity>
               </View>

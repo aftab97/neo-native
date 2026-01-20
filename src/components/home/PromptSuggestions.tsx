@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { t } from 'ttag';
 import { useLayoutStore, useChatStore } from '../../store';
 
-const SUGGESTIONS = [
-  'What can Neo do?',
-  'What is my project code?',
-  'How do I apply for leave?',
-  'Get guest wifi access',
+const getSuggestions = () => [
+  t`What can Neo do?`,
+  t`What is my project code?`,
+  t`How do I apply for leave?`,
+  t`Get guest wifi access`,
 ];
 
 interface PromptSuggestionsProps {
@@ -28,6 +29,8 @@ export const PromptSuggestions: React.FC<PromptSuggestionsProps> = ({
     onSuggestionPress?.(suggestion);
   };
 
+  const suggestions = getSuggestions();
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -35,7 +38,7 @@ export const PromptSuggestions: React.FC<PromptSuggestionsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {SUGGESTIONS.map((suggestion, index) => (
+        {suggestions.map((suggestion, index) => (
           <TouchableOpacity
             key={index}
             style={[
@@ -44,7 +47,7 @@ export const PromptSuggestions: React.FC<PromptSuggestionsProps> = ({
             ]}
             onPress={() => handlePress(suggestion)}
             activeOpacity={0.7}
-            accessibilityLabel={`Suggestion: ${suggestion}`}
+            accessibilityLabel={`${t`Suggestion`}: ${suggestion}`}
             accessibilityRole="button"
           >
             <Text style={[styles.suggestionText, { color: textColor }]}>

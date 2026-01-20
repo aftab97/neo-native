@@ -7,6 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { t } from "ttag";
 import { useLayoutStore, useChatStore, useSessionStore, useFileStore } from "../store";
 import { useMutateChatPrompt, useGetUser } from "../api";
 import {
@@ -87,7 +88,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = () => {
 
       <ChatInput
         onSend={handleSend}
-        placeholder="Ask Neo..."
+        placeholder={t`Ask Neo`}
         isLoading={chatMutation.isPending}
       />
     </KeyboardAvoidingView>

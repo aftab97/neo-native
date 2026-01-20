@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { t } from 'ttag';
 import { useLayoutStore, useAgentStore, useSessionStore } from '../store';
 import {
   useChatHistory,
@@ -227,7 +228,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
       <ChatInput
         onSend={handleSend}
         onCancel={handleCancel}
-        placeholder={activeAgent ? `Ask ${activeAgent}...` : 'Ask Neo...'}
+        placeholder={activeAgent ? `${t`Ask`} ${activeAgent}...` : t`Ask Neo`}
         isLoading={chatMutation.isPending}
         isLiveChatActive={isLiveChatActive}
         onLiveChatSend={handleLiveChatSend}

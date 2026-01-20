@@ -9,6 +9,7 @@ import { queryClient } from '../api/queryClient';
 import { useLayoutStore } from '../store';
 import { fetchAndStoreSessionToken } from '../api/sessionToken';
 import { configureNotifications } from '../utils/notifications';
+import { LocaleProvider } from './LocaleProvider';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -43,10 +44,12 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
-            {children}
-          </NavigationContainer>
+          <LocaleProvider>
+            <NavigationContainer>
+              <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
+              {children}
+            </NavigationContainer>
+          </LocaleProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
