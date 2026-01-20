@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   Image,
   TouchableOpacity,
   Modal,
@@ -20,6 +19,7 @@ import { AIMessageImages, isImageFile } from './AIMessageImages';
 import { AIMessageAttachments } from './AIMessageAttachments';
 import { ChatAIFeedback } from './ChatAIFeedback';
 import { SourcesPills } from './SourcesPills';
+import { RoutingStatus } from './RoutingStatus';
 import { CloseIcon } from '../icons';
 
 interface AIBlockProps {
@@ -92,7 +92,6 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
   const tableHeaderBg = isDarkTheme ? colors.gray['800'] : colors.gray['100'];
 
   const isLoading = message.status && message.status.length > 0 && !message.message;
-  const hasError = message.status?.includes('Error');
 
   // Parse JSON responses (memoized to avoid re-parsing on each render)
   const parsedResponses = useMemo(() => {
@@ -341,20 +340,11 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
 
   return (
     <View style={styles.container}>
-      {/* Status indicator */}
-      {message.status && message.status.length > 0 && (
-        <View style={styles.statusContainer}>
-          {isLoading && <ActivityIndicator size="small" color={linkColor} />}
-          <Text
-            style={[
-              styles.statusText,
-              { color: hasError ? colors.red['500'] : secondaryTextColor },
-            ]}
-          >
-            {message.status.join(' • ')}
-          </Text>
-        </View>
-      )}
+      {/* Routing Status - expandable component (always rendered, handles empty state internally) */}
+      <RoutingStatus
+        status={message.status}
+        metadata={message.metadata as Record<string, any> | null}
+      />
 
       {/* Images from AI response files */}
       {imageFiles.length > 0 && <AIMessageImages files={imageFiles} />}
@@ -438,15 +428,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontStyle: 'italic',
   },
   emptyText: {
     fontSize: 14,

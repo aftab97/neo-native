@@ -158,13 +158,13 @@ export const useMutateChatPrompt = () => {
           });
         }
 
-        // Always add AI message placeholder
+        // Always add AI message placeholder (matching web app initial status)
         newMessages.push({
           role: "ai",
           message: "",
           message_id: messageIdAi,
           session_id: sessionId || "",
-          status: ["Processing..."],
+          status: ["Routing Layer activated"],
           order: nextOrder + (isJson ? 0 : 1),
           // Include files in AI message too (matching web app)
           files: validFiles.length > 0 ? validFiles : undefined,
@@ -175,9 +175,10 @@ export const useMutateChatPrompt = () => {
 
       // Accumulation variables
       let accumulatedMessage = "";
-      let accumulatedStatus: string[] = [];
+      let accumulatedStatus: string[] = ["Routing Layer activated"];
       let accumulatedContents: any[] = [];
       let accumulatedMetadata: Record<string, unknown> = {};
+      let accumulatedAgent = ""; // Track the backend/agent for final status
       let isCompleted = false; // Guard against double-completion
 
       return new Promise((resolve, reject) => {
@@ -297,6 +298,11 @@ export const useMutateChatPrompt = () => {
                 accumulatedMetadata = { ...accumulatedMetadata, ...parsed.metadata };
               }
 
+              // Track agent/backend for final status
+              if (parsed.agent) {
+                accumulatedAgent = parsed.agent;
+              }
+
               // Update the AI message in cache - this triggers React re-render
               queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
                 const updated = [...old];
@@ -322,13 +328,44 @@ export const useMutateChatPrompt = () => {
           }
         };
 
+        // Helper to get human-readable backend name (matching web app)
+        const getBackendStatusName = (agentId: string, prefix: string): string => {
+          const agentNames: Record<string, string> = {
+            '__fallback__': prefix.replace(/\s*from\s*$/i, ''),
+            'knowledge': `${prefix} Knowledge Base`,
+            'action': `${prefix} Action Bot`,
+            'utility': `${prefix} Utility`,
+            'sales_rfp': `${prefix} Proposal Assistant`,
+            'audit': `${prefix} Internal Audit Assistant`,
+            'hr': `${prefix} Manager Edge Assistant`,
+            'finance': `${prefix} Finance Assistant`,
+            'legal': `${prefix} Contracts Assistant`,
+            'web_search': `${prefix} Web Search`,
+            'aionbi': `${prefix} Sales Analyst`,
+            'unleash': `${prefix} Unleash Assistant`,
+            'financepnlgbi': `${prefix} Finance Analyst - P&L (HFM)`,
+            'financeftegbi': `${prefix} Finance Analyst - Client FTE`,
+            'financerevenuegbi': `${prefix} Finance Analyst - Client Revenue`,
+            'gtddemandgbi': `${prefix} GTD Demand Analyst`,
+            'gtdsupplygbi': `${prefix} GTD Supply Analyst`,
+            'gtdskillsgbi': `${prefix} GTD Skills Analyst`,
+          };
+          return agentNames[agentId] || prefix.replace(/\s*from\s*$/i, '');
+        };
+
         // Helper to complete the stream and reset state
         const completeStream = () => {
           if (isCompleted) return; // Prevent double-completion
           isCompleted = true;
           es.close();
 
-          // Clear status on completion
+          // Add final "Answer generated from [backend]" status (matching web app)
+          const finalStatus = getBackendStatusName(accumulatedAgent, 'Answer generated from');
+          if (finalStatus && !accumulatedStatus.includes(finalStatus)) {
+            accumulatedStatus.push(finalStatus);
+          }
+
+          // Keep status on completion (matching web app behavior)
           queryClient.setQueryData<ChatMessage[]>(chatKey, (old = []) => {
             const updated = [...old];
             const lastIndex = updated.length - 1;
@@ -337,7 +374,7 @@ export const useMutateChatPrompt = () => {
               updated[lastIndex] = {
                 ...updated[lastIndex],
                 message: accumulatedMessage || "Response received.",
-                status: undefined,
+                status: [...accumulatedStatus], // Keep the accumulated status
               };
             }
 

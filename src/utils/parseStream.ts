@@ -363,9 +363,9 @@ export const parseStreamChunk = (chunk: string): ParsedChunk | null => {
     return result;
   }
 
-  // Handle END event
+  // Handle END event - final status is added in chat.ts with backend name
   if (chunk.includes('event: END')) {
-    result.status = ['Answer generated'];
+    // Don't add generic "Answer generated" here - completeStream adds it with backend name
     return result;
   }
 

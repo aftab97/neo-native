@@ -45,6 +45,8 @@ export { BuildingIcon } from './CommonIcons';
 export { HashIcon } from './CommonIcons';
 export { EmailIcon } from './CommonIcons';
 export { PhoneIcon } from './CommonIcons';
+export { ShuffleIcon } from './CommonIcons';
+export { ChevronDownIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';
