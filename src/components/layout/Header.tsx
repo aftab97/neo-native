@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackHeaderProps } from '@react-navigation/native-stack';
 import { useLayoutStore } from '../../store';
+import { StockButton } from './StockButton';
 
 // Simple icon components using text (can be replaced with SVG icons later)
 const MenuIcon = ({ color }: { color: string }) => (
@@ -47,15 +48,9 @@ export const Header: React.FC<HeaderProps> = ({ options }) => {
           <MenuIcon color={textColor} />
         </TouchableOpacity>
 
-        {/* Title / Logo */}
-        <View style={styles.titleContainer}>
-          <Text style={[styles.title, { color: textColor }]}>
-            {options.title || 'Neo'}
-          </Text>
-        </View>
 
-        {/* Empty spacer to keep title centered */}
-        <View style={styles.iconButton} />
+        {/* Stock price button */}
+        <StockButton />
       </View>
     </View>
   );

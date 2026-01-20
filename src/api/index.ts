@@ -37,3 +37,4 @@ export {
   type NotificationVariant,
 } from './notifications';
 export { useMutateSendFeedback } from './feedback';
+export { useGetStockPrice } from './stockPrice';

@@ -38,6 +38,9 @@ export const ENDPOINTS = {
   // Daily News
   DAILY_NEWS: '/api/v1/session/getDailyNews',
 
+  // Stock Price
+  STOCK_PRICE: '/api/v1/session/getStockPrice',
+
   // Notifications
   NOTIFICATIONS: '/api/v1/session/getNotify',
   GTD_NOTIFICATIONS: '/api/v1/session/getGtdNotifications',
