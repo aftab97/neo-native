@@ -17,6 +17,7 @@ import {
   useLayoutStore,
   useAgentStore,
   useNotificationStore,
+  useSessionStore,
 } from "../../store";
 import { useResetChat, useAvailableServices } from "../../hooks";
 import { useGetChatTitles, useNotifications, useGetUser, useGetProfilePicture } from "../../api";
@@ -44,6 +45,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { selectedAgent } = useAgentStore();
+  const currentSessionId = useSessionStore((state) => state.currentSessionId);
   const { resetAll, resetForAgent } = useResetChat();
   const {
     data: chatTitles = [],
@@ -173,25 +175,31 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
                 />
               }
             >
-              {chatTitles.map((chat) => (
-                <TouchableOpacity
-                  key={chat.session_id}
-                  style={[styles.listItem, { backgroundColor: "transparent" }]}
-                  onPress={() => handleChatPress(chat.session_id)}
-                  accessibilityLabel={`Open chat: ${chat.title}`}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.iconContainer}>
-                    <ChatIcon size={18} color={secondaryTextColor} />
-                  </View>
-                  <Text
-                    style={[styles.listItemText, { color: textColor }]}
-                    numberOfLines={1}
+              {chatTitles.map((chat) => {
+                const isSelected = currentSessionId === chat.session_id;
+                return (
+                  <TouchableOpacity
+                    key={chat.session_id}
+                    style={[
+                      styles.listItem,
+                      { backgroundColor: isSelected ? hoverBg : "transparent" },
+                    ]}
+                    onPress={() => handleChatPress(chat.session_id)}
+                    accessibilityLabel={`Open chat: ${chat.title}`}
+                    accessibilityRole="button"
                   >
-                    {chat.title || t`Untitled Chat`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <View style={styles.iconContainer}>
+                      <ChatIcon size={18} color={isSelected ? accentColor : secondaryTextColor} />
+                    </View>
+                    <Text
+                      style={[styles.listItemText, { color: textColor }]}
+                      numberOfLines={1}
+                    >
+                      {chat.title || t`Untitled Chat`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
               {isFetchingNextPage && (
                 <View style={styles.loadingFooter}>
                   <ActivityIndicator size="small" color={accentColor} />

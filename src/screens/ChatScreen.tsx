@@ -89,6 +89,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = () => {
     }
   }, [routeSessionId, user?.email]);
 
+  // Set currentSessionId when navigating to a chat from history
+  // Also clear selectedAgent to ensure proper selection highlighting in drawer
+  useEffect(() => {
+    if (routeSessionId) {
+      setCurrentSessionId(routeSessionId);
+      setSelectedAgent(null);
+    }
+  }, [routeSessionId, setCurrentSessionId, setSelectedAgent]);
+
   // Set agent if from route
   useEffect(() => {
     if (routeAgent) {
