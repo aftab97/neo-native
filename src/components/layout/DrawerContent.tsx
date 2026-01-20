@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import {
   useAgentStore,
   useNotificationStore,
 } from "../../store";
-import { useResetChat } from "../../hooks";
+import { useResetChat, useAvailableServices } from "../../hooks";
 import { useGetChatTitles, useNotifications, useGetUser, useGetProfilePicture } from "../../api";
 import { AGENTS } from "../../config/agents";
 import {
@@ -70,6 +70,15 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
   // User info for footer
   const { data: userInfo } = useGetUser();
   const { data: profilePictureData } = useGetProfilePicture();
+
+  // RBAC - filter agents based on user's available services
+  const { services: availableServices } = useAvailableServices();
+  const filteredAgents = useMemo(() => {
+    // If no services available yet, show all agents (loading state)
+    if (availableServices.length === 0) return AGENTS;
+    // Filter agents to only those the user has access to
+    return AGENTS.filter((agent) => availableServices.includes(agent.id));
+  }, [availableServices]);
 
   // Debug logging for notifications
   if (visibleNotifications.length > 0 || isLoadingNotifications) {
@@ -201,7 +210,7 @@ export const DrawerContent: React.FC<DrawerContentComponentProps> = ({
           style={styles.sectionScrollView}
           showsVerticalScrollIndicator={false}
         >
-          {AGENTS.map((agent) => {
+          {filteredAgents.map((agent) => {
             const isAnalystAgent = agent.categoryName?.toLowerCase().includes('analyst');
             return (
               <TouchableOpacity

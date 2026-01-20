@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useLayoutStore } from "../../store";
-import { useResetChat } from "../../hooks";
+import { useResetChat, useAvailableServices } from "../../hooks";
 import { AGENTS } from "../../config/agents";
 import { AgentMetadata } from "../../types/agent";
 import { AnalystIcon, AgentLibraryLogo } from "../icons";
@@ -65,6 +65,15 @@ export const AgentCards: React.FC = () => {
   const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const { resetForAgent } = useResetChat();
+  const { services: availableServices } = useAvailableServices();
+
+  // RBAC - filter agents based on user's available services
+  const filteredAgents = useMemo(() => {
+    // If no services available yet, show all agents (loading state)
+    if (availableServices.length === 0) return AGENTS;
+    // Filter agents to only those the user has access to
+    return AGENTS.filter((agent) => availableServices.includes(agent.id));
+  }, [availableServices]);
 
   const handleAgentPress = (agent: AgentMetadata) => {
     // Reset the agent's chat cache before navigating (fresh start)
@@ -88,7 +97,7 @@ export const AgentCards: React.FC = () => {
         Agents
       </Text>
       <FlatList
-        data={AGENTS}
+        data={filteredAgents}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={2}

@@ -1,10 +1,7 @@
 // API Configuration
-// Configure based on environment - update these URLs for your BFF
+// URL configuration is centralized in env.ts
 
-const DEV_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
-const PROD_API_URL = 'https://nonseclusive-charlena-unlustful.ngrok-free.dev';
-
-export const API_BASE_URL = DEV_API_URL;
+export { API_BASE_URL } from './env';
 
 // API Endpoints
 export const ENDPOINTS = {
