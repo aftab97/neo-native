@@ -21,9 +21,12 @@ export const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
   onRemoveAll,
 }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
-  const files = useFileStore((state) => state.files);
+  const allFiles = useFileStore((state) => state.files);
   const removeFile = useFileStore((state) => state.removeFile);
   const removeAllFiles = useFileStore((state) => state.removeAllFiles);
+
+  // Only show files that are visible in prompt bar (not yet sent)
+  const files = allFiles.filter((file) => file.isVisibleInPromptBar !== false);
 
   // Theme colors
   const backgroundColor = isDarkTheme ? colors.gray['800'] : colors.gray['100'];

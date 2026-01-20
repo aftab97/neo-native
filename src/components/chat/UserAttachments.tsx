@@ -2,18 +2,24 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Linking,
+  ActivityIndicator,
 } from 'react-native';
-import { useLayoutStore, usePopupStore } from '../../store';
-import { FileMetaData } from '../../types/chat';
+import { useLayoutStore } from '../../store';
 import { FileIcon } from '../icons';
 import { colors } from '../../theme/colors';
-import { isImageFile } from './AIMessageImages';
 
-interface AIMessageAttachmentsProps {
-  files: FileMetaData[];
+interface FileAttachment {
+  id?: string;
+  name: string;
+  type?: string;
+  loading?: boolean;
+  error?: boolean;
+  partialError?: boolean;
+}
+
+interface UserAttachmentsProps {
+  files: FileAttachment[];
 }
 
 /**
@@ -63,47 +69,15 @@ const getFileType = (fileName: string, fileType?: string): string => {
 };
 
 /**
- * AIMessageAttachments - Displays non-image file attachments from API response
- * Styled to match web app's Attachments component with variant="signedUrl"
+ * UserAttachments - Displays user uploaded files in conversation
+ * Styled to match web app's Attachments component with variant="conversion"
  */
-export const AIMessageAttachments: React.FC<AIMessageAttachmentsProps> = ({ files }) => {
+export const UserAttachments: React.FC<UserAttachmentsProps> = ({ files }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
-  const { addToast } = usePopupStore();
 
-  // Filter to non-image files with signed URLs
-  const attachmentFiles = files.filter((f) => !isImageFile(f) && f.signedUrl && !f.loading);
-
-  if (attachmentFiles.length === 0) {
+  if (!files || files.length === 0) {
     return null;
   }
-
-  const handleOpenFile = async (file: FileMetaData) => {
-    if (!file.signedUrl) {
-      addToast({
-        variant: 'danger',
-        label: 'File URL not available',
-      });
-      return;
-    }
-
-    try {
-      const canOpen = await Linking.canOpenURL(file.signedUrl);
-      if (canOpen) {
-        await Linking.openURL(file.signedUrl);
-      } else {
-        addToast({
-          variant: 'danger',
-          label: 'Unable to open file',
-        });
-      }
-    } catch (error) {
-      console.error('Error opening file:', error);
-      addToast({
-        variant: 'danger',
-        label: 'Failed to open file',
-      });
-    }
-  };
 
   // Theme colors matching web app tertiary button
   const tileBackground = isDarkTheme ? colors.gray['800'] : colors.gray['100'];
@@ -111,24 +85,46 @@ export const AIMessageAttachments: React.FC<AIMessageAttachmentsProps> = ({ file
   const textColor = isDarkTheme ? colors.gray['100'] : colors.gray['900'];
   const subtitleColor = isDarkTheme ? colors.gray['400'] : colors.gray['500'];
   const iconColor = isDarkTheme ? colors.blue['400'] : colors.blue['700'];
+  const errorIconBg = isDarkTheme ? colors.red['900'] : colors.red['200'];
+  const errorIconColor = isDarkTheme ? colors.red['400'] : colors.red['700'];
+  const warningIconBg = isDarkTheme ? colors.yellow['900'] : colors.yellow['200'];
+  const warningIconColor = isDarkTheme ? colors.yellow['400'] : colors.yellow['700'];
 
   return (
     <View style={styles.container}>
-      {attachmentFiles.map((file, index) => {
+      {files.map((file, index) => {
         const fileName = decodeURIComponent(file.name);
         const fileType = getFileType(fileName, file.type);
-        const key = `${fileName}-${index}`;
+        const hasError = file.error;
+        const hasPartialError = file.partialError;
+        const isLoading = file.loading;
+
+        // Determine icon background and color based on state
+        let currentIconBg = iconBackground;
+        let currentIconColor = iconColor;
+
+        if (hasError) {
+          currentIconBg = errorIconBg;
+          currentIconColor = errorIconColor;
+        } else if (hasPartialError) {
+          currentIconBg = warningIconBg;
+          currentIconColor = warningIconColor;
+        }
+
+        const key = file.id ?? `${fileName}-${index}`;
 
         return (
-          <TouchableOpacity
+          <View
             key={key}
             style={[styles.tile, { backgroundColor: tileBackground }]}
-            onPress={() => handleOpenFile(file)}
-            activeOpacity={0.7}
           >
             {/* Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: iconBackground }]}>
-              <FileIcon size={16} color={iconColor} />
+            <View style={[styles.iconContainer, { backgroundColor: currentIconBg }]}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color={iconColor} />
+              ) : (
+                <FileIcon size={16} color={currentIconColor} />
+              )}
             </View>
 
             {/* File info */}
@@ -147,7 +143,7 @@ export const AIMessageAttachments: React.FC<AIMessageAttachmentsProps> = ({ file
                 {fileType}
               </Text>
             </View>
-          </TouchableOpacity>
+          </View>
         );
       })}
     </View>
@@ -157,9 +153,8 @@ export const AIMessageAttachments: React.FC<AIMessageAttachmentsProps> = ({ file
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
     gap: 8,
-    paddingTop: 16,
   },
   tile: {
     flexDirection: 'row',

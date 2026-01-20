@@ -21,7 +21,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface SlideoutDrawerProps {
   visible: boolean;
   onClose: () => void;
-  children: React.ReactNode;
+  children: React.ReactNode | ((isExpanded: boolean) => React.ReactNode);
   /** Height of the drawer when collapsed. Defaults to 340 */
   defaultHeight?: number;
   /** Maximum height as a percentage of screen (0-1). Defaults to 0.8 (80%) */
@@ -32,6 +32,8 @@ interface SlideoutDrawerProps {
   showHandle?: boolean;
   /** Whether dragging down closes the drawer (without expand functionality). Defaults to false */
   dragToClose?: boolean;
+  /** Callback when expanded state changes */
+  onExpandedChange?: (isExpanded: boolean) => void;
 }
 
 /**
@@ -47,6 +49,7 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
   expandable = true,
   showHandle = true,
   dragToClose = false,
+  onExpandedChange,
 }) => {
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
 
@@ -143,7 +146,9 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
       }
 
       basePosition.current = targetValue;
-      setIsExpanded(targetValue === 0);
+      const newIsExpanded = targetValue === 0;
+      setIsExpanded(newIsExpanded);
+      onExpandedChange?.(newIsExpanded);
 
       Animated.spring(expandY, {
         toValue: targetValue,
@@ -240,7 +245,7 @@ export const SlideoutDrawer: React.FC<SlideoutDrawerProps> = ({
           <View style={[styles.handle, { backgroundColor: borderColor }]} />
         </View>
       )}
-      {children}
+      {typeof children === 'function' ? children(isExpanded) : children}
     </Animated.View>
   );
 

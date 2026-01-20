@@ -16,7 +16,9 @@ import { colors } from '../../theme/colors';
 import { SlideoutDrawer } from '../common';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PHOTO_TILE_SIZE = (SCREEN_WIDTH - 32 - 48) / 5; // 5 tiles with gaps
+const PHOTO_TILE_GAP = 8;
+const PHOTO_TILE_SIZE = (SCREEN_WIDTH - 32 - PHOTO_TILE_GAP * 4) / 5; // 5 tiles per row with gaps
+const TWO_ROW_HEIGHT = PHOTO_TILE_SIZE * 2 + PHOTO_TILE_GAP; // Height for 2 rows of tiles
 
 interface AttachmentSlideoutProps {
   visible: boolean;
@@ -58,18 +60,24 @@ export const AttachmentSlideout: React.FC<AttachmentSlideoutProps> = ({
   };
 
   const handleTakePhoto = async () => {
-    await takePhoto();
-    onClose();
+    const success = await takePhoto();
+    if (success) {
+      onClose();
+    }
   };
 
   const handlePickImages = async () => {
-    await pickImages();
-    onClose();
+    const success = await pickImages();
+    if (success) {
+      onClose();
+    }
   };
 
   const handlePickDocuments = async () => {
-    await pickDocuments();
-    onClose();
+    const success = await pickDocuments();
+    if (success) {
+      onClose();
+    }
   };
 
   const handleSelectRecentPhoto = async (asset: MediaLibrary.Asset) => {
@@ -90,107 +98,157 @@ export const AttachmentSlideout: React.FC<AttachmentSlideoutProps> = ({
       maxHeightPercent={0.8}
       expandable={true}
     >
-      <ScrollView
-        style={styles.contentScroll}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Photos Row */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
-            Photos
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.photoRow}
-          >
-            {/* Camera Button */}
-            <TouchableOpacity
-              style={[styles.cameraTile, { backgroundColor: accentColor }]}
-              onPress={handleTakePhoto}
-              accessibilityLabel="Take photo"
-              accessibilityRole="button"
-            >
-              <CameraIcon size={28} color="#ffffff" />
-            </TouchableOpacity>
-
-            {/* Recent Photos */}
-            {recentPhotos.map((photo) => (
-              photo.uri ? (
+      {(isExpanded) => (
+        <ScrollView
+          style={styles.contentScroll}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Photos Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>
+              Photos
+            </Text>
+            {isExpanded ? (
+              // Expanded: 2-row grid layout
+              <View style={[styles.photoGrid, { height: TWO_ROW_HEIGHT }]}>
+                {/* Camera Button */}
                 <TouchableOpacity
-                  key={photo.id}
-                  style={styles.photoTile}
-                  onPress={() => handleSelectRecentPhoto(photo)}
-                  accessibilityLabel={`Select photo ${photo.filename}`}
+                  style={[styles.cameraTile, { backgroundColor: accentColor }]}
+                  onPress={handleTakePhoto}
+                  accessibilityLabel="Take photo"
                   accessibilityRole="button"
                 >
-                  <Image
-                    source={{ uri: photo.uri }}
-                    style={styles.photoImage}
-                    resizeMode="cover"
-                  />
+                  <CameraIcon size={28} color="#ffffff" />
                 </TouchableOpacity>
-              ) : null
-            ))}
 
-            {/* More Photos Button */}
-            <TouchableOpacity
-              style={[styles.moreTile, { backgroundColor: tileBackground }]}
-              onPress={handlePickImages}
-              accessibilityLabel="Browse more photos"
-              accessibilityRole="button"
-            >
-              <PlusIcon size={24} color={secondaryTextColor} />
-              <Text style={[styles.moreText, { color: secondaryTextColor }]}>
-                More
+                {/* Recent Photos - show up to 8 to fill 2 rows (camera + 8 photos + more = 10 tiles) */}
+                {recentPhotos.slice(0, 8).map((photo) => (
+                  photo.uri ? (
+                    <TouchableOpacity
+                      key={photo.id}
+                      style={styles.photoTile}
+                      onPress={() => handleSelectRecentPhoto(photo)}
+                      accessibilityLabel={`Select photo ${photo.filename}`}
+                      accessibilityRole="button"
+                    >
+                      <Image
+                        source={{ uri: photo.uri }}
+                        style={styles.photoImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ) : null
+                ))}
+
+                {/* More Photos Button */}
+                <TouchableOpacity
+                  style={[styles.moreTile, { backgroundColor: tileBackground }]}
+                  onPress={handlePickImages}
+                  accessibilityLabel="Browse more photos"
+                  accessibilityRole="button"
+                >
+                  <PlusIcon size={24} color={secondaryTextColor} />
+                  <Text style={[styles.moreText, { color: secondaryTextColor }]}>
+                    More
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Collapsed: horizontal scroll
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.photoRow}
+              >
+                {/* Camera Button */}
+                <TouchableOpacity
+                  style={[styles.cameraTile, { backgroundColor: accentColor }]}
+                  onPress={handleTakePhoto}
+                  accessibilityLabel="Take photo"
+                  accessibilityRole="button"
+                >
+                  <CameraIcon size={28} color="#ffffff" />
+                </TouchableOpacity>
+
+                {/* Recent Photos */}
+                {recentPhotos.map((photo) => (
+                  photo.uri ? (
+                    <TouchableOpacity
+                      key={photo.id}
+                      style={styles.photoTile}
+                      onPress={() => handleSelectRecentPhoto(photo)}
+                      accessibilityLabel={`Select photo ${photo.filename}`}
+                      accessibilityRole="button"
+                    >
+                      <Image
+                        source={{ uri: photo.uri }}
+                        style={styles.photoImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ) : null
+                ))}
+
+                {/* More Photos Button */}
+                <TouchableOpacity
+                  style={[styles.moreTile, { backgroundColor: tileBackground }]}
+                  onPress={handlePickImages}
+                  accessibilityLabel="Browse more photos"
+                  accessibilityRole="button"
+                >
+                  <PlusIcon size={24} color={secondaryTextColor} />
+                  <Text style={[styles.moreText, { color: secondaryTextColor }]}>
+                    More
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+
+          {/* Web Search Row */}
+          <TouchableOpacity
+            style={[styles.actionRow, { borderBottomColor: borderColor }]}
+            onPress={handleWebSearch}
+            accessibilityLabel="Web search"
+            accessibilityRole="button"
+          >
+            <View style={[styles.actionIcon, { backgroundColor: tileBackground }]}>
+              <GlobeIcon size={22} color={accentColor} />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={[styles.actionTitle, { color: textColor }]}>
+                Web Search
               </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+              <Text style={[styles.actionSubtitle, { color: secondaryTextColor }]}>
+                Search the web for information
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-        {/* Web Search Row */}
-        <TouchableOpacity
-          style={[styles.actionRow, { borderBottomColor: borderColor }]}
-          onPress={handleWebSearch}
-          accessibilityLabel="Web search"
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: tileBackground }]}>
-            <GlobeIcon size={22} color={accentColor} />
-          </View>
-          <View style={styles.actionContent}>
-            <Text style={[styles.actionTitle, { color: textColor }]}>
-              Web Search
-            </Text>
-            <Text style={[styles.actionSubtitle, { color: secondaryTextColor }]}>
-              Search the web for information
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Add Files Row */}
-        <TouchableOpacity
-          style={[styles.actionRow, { borderBottomColor: 'transparent' }]}
-          onPress={handlePickDocuments}
-          accessibilityLabel="Add files"
-          accessibilityRole="button"
-        >
-          <View style={[styles.actionIcon, { backgroundColor: tileBackground }]}>
-            <FileIcon size={22} color={accentColor} />
-          </View>
-          <View style={styles.actionContent}>
-            <Text style={[styles.actionTitle, { color: textColor }]}>
-              Add Files
-            </Text>
-            <Text style={[styles.actionSubtitle, { color: secondaryTextColor }]}>
-              {isLiveChatActive
-                ? 'PDF, Word, Excel, PowerPoint, Text, CSV'
-                : 'PDF, Word, Excel, PowerPoint, Text, CSV, ZIP'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Add Files Row */}
+          <TouchableOpacity
+            style={[styles.actionRow, { borderBottomColor: 'transparent' }]}
+            onPress={handlePickDocuments}
+            accessibilityLabel="Add files"
+            accessibilityRole="button"
+          >
+            <View style={[styles.actionIcon, { backgroundColor: tileBackground }]}>
+              <FileIcon size={22} color={accentColor} />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={[styles.actionTitle, { color: textColor }]}>
+                Add Files
+              </Text>
+              <Text style={[styles.actionSubtitle, { color: secondaryTextColor }]}>
+                {isLiveChatActive
+                  ? 'PDF, Word, Excel, PowerPoint, Text, CSV'
+                  : 'PDF, Word, Excel, PowerPoint, Text, CSV, ZIP'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
     </SlideoutDrawer>
   );
 };
@@ -215,7 +273,12 @@ const styles = StyleSheet.create({
   },
   photoRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: PHOTO_TILE_GAP,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: PHOTO_TILE_GAP,
   },
   cameraTile: {
     width: PHOTO_TILE_SIZE,

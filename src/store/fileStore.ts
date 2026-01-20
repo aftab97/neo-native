@@ -52,6 +52,8 @@ export interface FileAttachment {
   partialError?: boolean;
   // Upload progress (0-100)
   uploadProgress?: number;
+  // Whether to show in prompt bar (hidden after sending, cleared after response)
+  isVisibleInPromptBar?: boolean;
 }
 
 interface FileState {
@@ -66,6 +68,8 @@ interface FileState {
   getFileById: (id: string) => FileAttachment | undefined;
   // Remove preview files and replace with real ones (for ZIP extraction)
   replacePreviewFiles: (previewUuids: string[], realFiles: FileAttachment[]) => void;
+  // Hide files from prompt bar (called when user sends message)
+  hideFilesFromPromptBar: () => void;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -73,7 +77,10 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   addFiles: (newFiles) =>
     set((state) => ({
-      files: [...state.files, ...newFiles],
+      files: [
+        ...state.files,
+        ...newFiles.map((file) => ({ ...file, isVisibleInPromptBar: true })),
+      ],
     })),
 
   removeFile: (id) =>
@@ -123,7 +130,12 @@ export const useFileStore = create<FileState>((set, get) => ({
     set((state) => ({
       files: [
         ...state.files.filter((file) => !file.uuid || !previewUuids.includes(file.uuid)),
-        ...realFiles,
+        ...realFiles.map((file) => ({ ...file, isVisibleInPromptBar: true })),
       ],
+    })),
+
+  hideFilesFromPromptBar: () =>
+    set((state) => ({
+      files: state.files.map((file) => ({ ...file, isVisibleInPromptBar: false })),
     })),
 }));

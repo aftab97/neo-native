@@ -541,12 +541,12 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
     }
   }, [sessionId, setCurrentSessionId, uploadNonArchiveFile, uploadArchiveFile, addToast]);
 
-  // Take photo with camera
-  const takePhoto = useCallback(async () => {
+  // Take photo with camera - returns true if photo was taken, false if cancelled
+  const takePhoto = useCallback(async (): Promise<boolean> => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) return false;
 
-    if (!validateFileCount(1)) return;
+    if (!validateFileCount(1)) return false;
 
     try {
       const result = await ImagePicker.launchCameraAsync({
@@ -576,22 +576,25 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
 
         addFiles([newFile]);
 
-        // Process the file
-        await processFiles([newFile]);
+        // Process the file in background (don't await)
+        processFiles([newFile]);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error taking photo:', error);
       addToast({
         label: 'Failed to take photo.',
         variant: 'danger',
       });
+      return false;
     }
   }, [addFiles, addToast, processFiles, validateFileCount]);
 
-  // Pick images from gallery
-  const pickImages = useCallback(async () => {
+  // Pick images from gallery - returns true if images were selected, false if cancelled
+  const pickImages = useCallback(async (): Promise<boolean> => {
     const hasPermission = await requestMediaLibraryPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) return false;
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -602,7 +605,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        if (!validateFileCount(result.assets.length)) return;
+        if (!validateFileCount(result.assets.length)) return false;
 
         const newFiles: FileAttachment[] = result.assets.map((asset) => {
           const fileName = asset.fileName || `image_${Date.now()}.jpg`;
@@ -624,20 +627,23 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
 
         addFiles(newFiles);
 
-        // Process the files
-        await processFiles(newFiles);
+        // Process the files in background (don't await)
+        processFiles(newFiles);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error picking images:', error);
       addToast({
         label: 'Failed to pick images.',
         variant: 'danger',
       });
+      return false;
     }
   }, [addFiles, addToast, processFiles, validateFileCount]);
 
-  // Pick documents
-  const pickDocuments = useCallback(async () => {
+  // Pick documents - returns true if documents were selected, false if cancelled
+  const pickDocuments = useCallback(async (): Promise<boolean> => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
@@ -676,7 +682,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
           });
         }
 
-        if (!validateFileCount(validFiles.length)) return;
+        if (!validateFileCount(validFiles.length)) return false;
 
         if (blockedArchives.length > 0) {
           addToast({
@@ -688,16 +694,19 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
         if (validFiles.length > 0) {
           addFiles(validFiles);
 
-          // Process the files
-          await processFiles(validFiles);
+          // Process the files in background (don't await)
+          processFiles(validFiles);
+          return true;
         }
       }
+      return false;
     } catch (error) {
       console.error('Error picking documents:', error);
       addToast({
         label: 'Failed to pick documents.',
         variant: 'danger',
       });
+      return false;
     }
   }, [isLiveChatActive, addFiles, addToast, processFiles, validateFileCount]);
 
@@ -747,8 +756,8 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
 
       addFiles([newFile]);
 
-      // Process the file
-      await processFiles([newFile]);
+      // Process the file in background (don't await)
+      processFiles([newFile]);
     } catch (error) {
       console.error('Error adding photo from asset:', error);
       addToast({

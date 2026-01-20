@@ -98,6 +98,9 @@ export const useMutateChatPrompt = () => {
         gcsUris: f.processFileResponse?.fileResponse?.gcs_uris,
       })));
       const validFiles = filesFromStore.filter((file) => !file.error);
+
+      // Hide files from prompt bar immediately when sending
+      useFileStore.getState().hideFilesFromPromptBar();
       console.log('[Chat] Valid files after filter:', validFiles.length);
 
       // Use cacheAgent for cache key if provided, otherwise fall back to agent
@@ -153,7 +156,7 @@ export const useMutateChatPrompt = () => {
             message_id: messageIdUser,
             session_id: sessionId || "",
             order: nextOrder,
-            // Include files in user message (matching web app)
+            // Include uploaded files in user message for display
             files: validFiles.length > 0 ? validFiles : undefined,
           });
         }
@@ -166,8 +169,7 @@ export const useMutateChatPrompt = () => {
           session_id: sessionId || "",
           status: ["Routing Layer activated"],
           order: nextOrder + (isJson ? 0 : 1),
-          // Include files in AI message too (matching web app)
-          files: validFiles.length > 0 ? validFiles : undefined,
+          // Files will be populated from API response (TRANSLATED_FILES event)
         });
 
         return [...old, ...newMessages];

@@ -6,4 +6,5 @@ export { AdaptiveCardViewer } from './AdaptiveCardViewer';
 export { ChartViewer } from './ChartViewer';
 export { AIMessageImages, isImageFile } from './AIMessageImages';
 export { AIMessageAttachments } from './AIMessageAttachments';
+export { UserAttachments } from './UserAttachments';
 export { ChatAIFeedback } from './ChatAIFeedback';
