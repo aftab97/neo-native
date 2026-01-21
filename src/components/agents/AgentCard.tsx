@@ -52,8 +52,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 16, // text-md (1rem / 16px) to match web
+    fontWeight: '400', // font-normal to match web
     marginBottom: 8,
   },
   itemsContainer: {

@@ -137,12 +137,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16, // text-md (1rem / 16px)
+    fontWeight: "400", // font-normal to match web
     marginBottom: 4,
   },
   description: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 14, // text-sm (0.875rem / 14px) to match web
+    lineHeight: 20,
   },
 });

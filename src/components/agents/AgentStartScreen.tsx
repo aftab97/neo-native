@@ -92,21 +92,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 36, // text-4xl (2.25rem / 36px) to match web
+    fontWeight: '400', // font-normal to match web
+    letterSpacing: -0.32, // tracking-[-0.02rem] to match web
     marginBottom: 8,
     textAlign: 'center',
   },
   subTitle: {
-    fontSize: 18,
-    fontWeight: '400',
+    fontSize: 18, // text-lg to match web
+    fontWeight: '400', // font-normal to match web
     marginBottom: 16,
     textAlign: 'center',
   },
   description: {
-    fontSize: 16,
+    fontSize: 18, // text-lg to match web
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
   },
   cardsContainer: {
     paddingHorizontal: 16,

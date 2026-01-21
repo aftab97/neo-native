@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.anonymous.neonative",
       "infoPlist": {
         "NSCameraUsageDescription": "Neo needs access to your camera to take photos for upload.",
-        "NSPhotoLibraryUsageDescription": "Neo needs access to your photo library to select images for upload."
+        "NSPhotoLibraryUsageDescription": "Neo needs access to your photo library to select images for upload.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,7 +28,17 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.neonative"
+      "package": "com.anonymous.neonative",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -50,6 +61,12 @@
           "isAccessMediaLocationEnabled": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "50443ef5-5e65-47e5-a801-1d70fce815db"
+      }
+    },
+    "owner": "aftab97"
   }
 }
