@@ -38,3 +38,13 @@ export {
 } from './notifications';
 export { useMutateSendFeedback } from './feedback';
 export { useGetStockPrice } from './stockPrice';
+export {
+  useSupportOverview,
+  useTermsAndConditionsPage,
+  findBlock,
+  stripHtml,
+  type SupportBlock,
+  type SupportData,
+  type SupportCardAttributes,
+  type TermsData,
+} from './support';

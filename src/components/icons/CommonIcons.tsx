@@ -695,3 +695,204 @@ export const ChevronDownIcon: React.FC<IconProps> = ({ size = 24, color = '#646b
     />
   </Svg>
 );
+
+// Help Circle icon - for Help & Support section
+export const HelpCircleIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Path
+      d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 17h.01"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Info icon - for Support option
+export const InfoIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Path
+      d="M12 16v-4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 8h.01"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Rocket icon - for Get Started option
+export const RocketIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Alert Circle icon - generic alert
+export const AlertCircleIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Path
+      d="M12 8v4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 16h.01"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Issue icon - speech bubble with exclamation mark (for Report an Issue) - matches web issue.svg
+export const IssueIcon: React.FC<IconProps> = ({ size = 20, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <G clipPath="url(#clip0_issue)">
+      <Path
+        d="M2.49438 13.6174C2.61691 13.9265 2.64419 14.2652 2.57271 14.5899L1.68521 17.3316C1.65661 17.4706 1.66401 17.6147 1.70669 17.75C1.74937 17.8854 1.82593 18.0077 1.9291 18.1052C2.03227 18.2027 2.15864 18.2722 2.29621 18.3071C2.43379 18.3421 2.57801 18.3413 2.71521 18.3049L5.55938 17.4733C5.86581 17.4125 6.18315 17.439 6.47521 17.5499C8.2547 18.3809 10.2705 18.5568 12.167 18.0464C14.0635 17.536 15.7188 16.3721 16.8408 14.7602C17.9628 13.1483 18.4795 11.1919 18.2996 9.23622C18.1198 7.2805 17.255 5.45115 15.8578 4.07092C14.4606 2.6907 12.6208 1.84829 10.663 1.69234C8.70526 1.53639 6.75532 2.07691 5.15725 3.21854C3.55917 4.36017 2.41565 6.02955 1.92846 7.93212C1.44126 9.8347 1.64169 11.8482 2.49438 13.6174Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M10 6.66602V9.99935"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M10 13.334H10.0088"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </G>
+    <Defs>
+      <ClipPath id="clip0_issue">
+        <Rect width="20" height="20" fill="white" />
+      </ClipPath>
+    </Defs>
+  </Svg>
+);
+
+// External Link icon - for external links
+export const ExternalLinkIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M15 3h6v6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M10 14L21 3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Neo Logo Text - matches web neo-logo-text.svg
+export const NeoLogoText: React.FC<{ width?: number; height?: number; color?: string }> = ({
+  width = 70,
+  height = 20,
+  color = '#646b82'
+}) => (
+  <Svg width={width} height={height} viewBox="0 0 70 20" fill="none">
+    <Path
+      fill={color}
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M15.613 19.878c-1.485 0-2.829-.858-3.507-2.24L9.51 12.344l-.001-.003L7.62 8.49l-.423-.862C6.49 6.18 5.782 4.734 5.07 3.29c-.256-.52-.647-.774-1.194-.774-.04 0-.079 0-.118.005-.527.033-.897.299-1.097.79a2.098 2.098 0 0 0-.128.779c-.004 2.76-.005 5.518-.006 8.276v5.917c0 .738-.3 1.186-.915 1.366a1.233 1.233 0 0 1-1.563-.91 2.148 2.148 0 0 1-.046-.477V15.03C.002 11.34.001 7.651.005 3.962.008 1.94 1.38.327 3.343.04 3.526.013 3.71 0 3.893 0c1.476 0 2.81.848 3.484 2.211.66 1.34 1.317 2.68 1.974 4.021l.242.494.521 1.065.002.004.001.002.778 1.588c1.168 2.38 2.335 4.76 3.501 7.142.276.565.666.83 1.224.832.745 0 1.33-.572 1.333-1.303.004-1.125.004-2.264.004-3.38V1.513c.001-.768.542-1.347 1.258-1.347.156 0 .313.03.467.087.493.183.792.627.799 1.185.006.477.006.962.006 1.436V8.894l.001 2.114v.526a732.84 732.84 0 0 1-.004 4.42c-.011 2.039-1.347 3.6-3.323 3.885-.181.027-.365.04-.546.04h-.002Zm30.761-2.785C48.336 18.995 51.11 20 54.393 20h-.002 4.726c3.284 0 6.057-1.006 8.019-2.909a8.958 8.958 0 0 0 2.137-3.225c.484-1.22.729-2.526.729-3.856s-.252-2.654-.727-3.826a9.34 9.34 0 0 0-2.138-3.255C65.175 1.027 62.401.021 59.12.021h-4.726c-3.283 0-6.056 1.006-8.022 2.912a9.827 9.827 0 0 0-2.162 3.253 10.822 10.822 0 0 0-.7 3.826c0 1.31.236 2.605.703 3.858a9.408 9.408 0 0 0 2.162 3.223Zm-.342-7.081c0-4.61 3.154-7.473 8.23-7.473h4.989c5.076 0 8.23 2.863 8.23 7.473 0 4.61-3.154 7.472-8.23 7.472h-4.989c-5.076 0-8.23-2.863-8.23-7.472Zm-21.345 9.65h15.1v.002h.162c.049 0 .162-.001.256-.013a1.272 1.272 0 0 0 1.107-1.306c-.029-.706-.595-1.2-1.377-1.2H25.683l-.002-.734c-.003-.789-.006-1.604.01-2.403.007-.319.058-.649.15-.956.417-1.388 1.617-2.252 3.132-2.256h9.363c.404 0 .717-.003 1.013-.01a1.246 1.246 0 0 0 1.2-1.088 1.261 1.261 0 0 0-.841-1.343 2.046 2.046 0 0 0-.635-.09c-1.682-.002-3.364-.002-5.046-.002-1.682 0-3.364.001-5.046.004a5.815 5.815 0 0 0-1.169.103c-2.773.577-4.642 2.869-4.65 5.704v4.057c0 1.045.485 1.532 1.525 1.532ZM23.177 6.51c.002.805.52 1.39 1.234 1.39h.012c.35-.004.683-.146.918-.388.247-.254.373-.6.365-.998a47.16 47.16 0 0 1-.013-1.681l.001-.175c.002-.22.003-.488.003-.856V2.745h7.283l7.236-.001c.422-.002.793-.142 1.044-.398.229-.232.348-.537.342-.884C41.591.73 41.035.237 40.218.237H24.59c-.897 0-1.412.507-1.414 1.386-.003 1.975-.003 2.702 0 4.53v.356Z"
+    />
+  </Svg>
+);
+
+// File Text icon - for Terms & Policies (document with dotted lines) - matches web file.svg
+export const FileTextIcon: React.FC<IconProps> = ({ size = 20, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 21 20" fill="none">
+    <Path
+      d="M13.333 1.667h-7.5a1.667 1.667 0 0 0-1.666 1.666v13.334a1.667 1.667 0 0 0 1.666 1.666h10a1.667 1.667 0 0 0 1.667-1.666V5.833l-4.167-4.166Z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.5 1.667V5a1.667 1.667 0 0 0 1.667 1.667H17.5"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7.5 10.833h1.667M12.5 10.833h1.667M7.5 14.167h1.667M12.5 14.167h1.667"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);

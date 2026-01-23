@@ -8,9 +8,12 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { t } from 'ttag';
+import { useNavigation } from '@react-navigation/native';
 import { useLayoutStore, useLocaleStore } from '../../store';
+import { SERVICE_NOW_URL } from '../../config/env';
 import { useEffectiveLocale, type AvailableLocale } from '../../hooks';
 import { useGetUser, useGetProfilePicture, useDeleteAllChats } from '../../api';
 import { clearStoredJwt } from '../../api';
@@ -27,6 +30,10 @@ import {
   SunIcon,
   TrashIcon,
   LogoutIcon,
+  InfoIcon,
+  IssueIcon,
+  FileTextIcon,
+  ChevronRightIcon,
 } from '../icons';
 import { colors } from '../../theme/colors';
 
@@ -77,6 +84,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   visible,
   onClose,
 }) => {
+  const navigation = useNavigation();
   const isDarkTheme = useLayoutStore((state) => state.isDarkTheme);
   const theme = useLayoutStore((state) => state.theme);
   const setTheme = useLayoutStore((state) => state.setTheme);
@@ -164,6 +172,21 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         },
       ]
     );
+  };
+
+  // Help & Support handlers
+  const handleSupportPress = () => {
+    onClose();
+    navigation.navigate('Support' as never);
+  };
+
+  const handleReportIssuePress = () => {
+    Linking.openURL(SERVICE_NOW_URL);
+  };
+
+  const handleTermsPress = () => {
+    onClose();
+    navigation.navigate('Terms' as never);
   };
 
   const fullName = formatName(userInfo?.firstname, userInfo?.lastname);
@@ -431,6 +454,57 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               </View>
               <View style={styles.settingsRowContent}>
                 <Text style={[styles.settingsLabel, { color: dangerColor }]}>{t`Log out`}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Help & Support Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>{t`Help & Support`}</Text>
+          <View style={[styles.sectionContent, { backgroundColor: surfaceColor, borderColor }]}>
+            {/* Support */}
+            <TouchableOpacity
+              style={styles.settingsRow}
+              onPress={handleSupportPress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <InfoIcon size={20} color={accentColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>{t`Support`}</Text>
+                <ChevronRightIcon size={20} color={secondaryText} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Report an Issue */}
+            <TouchableOpacity
+              style={styles.settingsRow}
+              onPress={handleReportIssuePress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <IssueIcon size={20} color={accentColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>{t`Report an issue`}</Text>
+                <ChevronRightIcon size={20} color={secondaryText} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Terms & Policies */}
+            <TouchableOpacity
+              style={[styles.settingsRow, styles.lastRow]}
+              onPress={handleTermsPress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.settingsIconWrapper, { backgroundColor: backgroundColor }]}>
+                <FileTextIcon size={20} color={accentColor} />
+              </View>
+              <View style={styles.settingsRowContent}>
+                <Text style={[styles.settingsLabel, { color: textColor }]}>{t`Terms & policies`}</Text>
+                <ChevronRightIcon size={20} color={secondaryText} />
               </View>
             </TouchableOpacity>
           </View>

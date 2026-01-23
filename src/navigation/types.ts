@@ -7,6 +7,8 @@ export type MainStackParamList = {
   Home: undefined;
   Chat: { sessionId?: string; agent?: string };
   Agent: { agentId: string };
+  Support: undefined;
+  Terms: undefined;
 };
 
 // Drawer params

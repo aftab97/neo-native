@@ -47,6 +47,14 @@ export { EmailIcon } from './CommonIcons';
 export { PhoneIcon } from './CommonIcons';
 export { ShuffleIcon } from './CommonIcons';
 export { ChevronDownIcon } from './CommonIcons';
+export { HelpCircleIcon } from './CommonIcons';
+export { InfoIcon } from './CommonIcons';
+export { RocketIcon } from './CommonIcons';
+export { AlertCircleIcon } from './CommonIcons';
+export { IssueIcon } from './CommonIcons';
+export { ExternalLinkIcon } from './CommonIcons';
+export { FileTextIcon } from './CommonIcons';
+export { NeoLogoText } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

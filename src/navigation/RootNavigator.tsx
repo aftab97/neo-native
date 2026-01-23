@@ -7,6 +7,8 @@ import { Header } from '../components/layout/Header';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { AgentScreen } from '../screens/AgentScreen';
+import { SupportScreen } from '../screens/SupportScreen';
+import { TermsScreen } from '../screens/TermsScreen';
 import type { MainStackParamList, DrawerParamList } from './types';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -39,6 +41,16 @@ const MainStack = () => {
         name="Agent"
         component={AgentScreen}
         options={{ title: 'Agent' }}
+      />
+      <Stack.Screen
+        name="Support"
+        component={SupportScreen}
+        options={{ title: 'Support', headerShown: false }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ title: 'Terms & Policies', headerShown: false }}
       />
     </Stack.Navigator>
   );
