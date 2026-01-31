@@ -7,7 +7,7 @@ export type Environment = 'DEV' | 'QA' | 'PROD';
 
 // API URLs for each environment
 export const ENV_URLS: Record<Environment, string> = {
-  DEV: 'http://localhost:8010',
+  DEV: 'http://localhost:8090',
   QA: 'https://qa-api.example.com', // Update with actual QA URL
   PROD: 'https://prod-api.example.com', // Update with actual PROD URL
 };
