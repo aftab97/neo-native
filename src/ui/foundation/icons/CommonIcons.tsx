@@ -896,3 +896,55 @@ export const FileTextIcon: React.FC<IconProps> = ({ size = 20, color = '#646b82'
     />
   </Svg>
 );
+
+// Prompt Library icon - document with edit pencil - matches web prompt-library.svg
+export const PromptLibraryIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 25 24" fill="none">
+    <Path
+      d="M11.32 9h-3m3.21 3H8.3m7.02 3h-7m12.31-2.79v2.8a4.2 4.2 0 0 1-4.2 4.2h-7.7a4.2 4.2 0 0 1-4.2-4.2V8.25a4.2 4.2 0 0 1 4.2-4.2h5.8"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <Path
+      d="M19.17 4.4a1.38 1.38 0 0 1 1.95 1.96l-3.9 3.91a1.3 1.3 0 0 1-.56.33l-1.87.54a.32.32 0 0 1-.4-.4l.54-1.87c.06-.2.18-.4.33-.55l3.91-3.92Z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Search Web icon - globe with meridians - matches web SearchWeb.svg
+export const SearchWebIcon: React.FC<IconProps> = ({ size = 24, color = '#646b82' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.09 4c-2.91 2.16-4.54 5.02-4.54 8 0 2.98 1.63 5.84 4.54 8 2.9-2.16 4.53-5.02 4.53-8 0-2.98-1.62-5.84-4.53-8Z"
+      stroke={color}
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M5 8s3.14 2 7 2c3.62 0 7-1.8 7-1.8m0 7.76s-3.14-1.58-7-1.58c-3.62 0-7 1.39-7 1.39"
+      stroke={color}
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12 4.89V20"
+      stroke={color}
+      strokeWidth="1.3"
+      strokeLinecap="round"
+    />
+  </Svg>
+);

@@ -50,6 +50,8 @@ export const AGENT_NAMES = {
   data: 'aionbi',
   Action: 'action',
   Unleash: 'unleash',
+  MReview: 'mreview',
+  ProcurementConcord: 'procurementconcord',
   FinancePnLGbi: 'financepnlgbi',
   FinancePnLHfm: 'financepnlhfm',
   FinanceFteGbi: 'financeftegbi',

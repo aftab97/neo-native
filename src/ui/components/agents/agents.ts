@@ -2,13 +2,15 @@ import { AgentMetadata, AGENT_NAMES } from './types';
 
 /**
  * Agent metadata matching the web app (neo3-ui)
+ * Order matches the web app's prompt library modal sidebar
  * Icons map to the same SVG icons used in the web app:
- * - rfp-proposal: Knowledge, Legal, Finance, RFP, Unleash
+ * - rfp-proposal: Knowledge, Legal, Finance, RFP, Unleash (purple sparkle)
  * - analyst: Sales Analyst, Data (aionbi), Finance Analysts, GTD Analysts
- * - internal-audit: Audit
+ * - internal-audit: Audit (blue grid)
  * - hand-heart: HR (Manager Edge)
  */
 export const AGENTS: AgentMetadata[] = [
+  // === Assistants (in web app prompt library order) ===
   {
     id: AGENT_NAMES.Knowledge,
     name: 'Knowledge',
@@ -17,46 +19,6 @@ export const AGENTS: AgentMetadata[] = [
     iconType: 'rfp-proposal',
     categoryName: 'General',
     cardData: [],
-  },
-  {
-    id: AGENT_NAMES.HR,
-    name: 'HR',
-    title: 'Manager Edge Assistant',
-    text: 'The Manager Edge Assistant integrates data to give People Managers actionable insights, supporting performance and engagement processes but not replacing judgment—use it as a support tool, not for sensitive decisions, and remain accountable for outcomes.',
-    iconType: 'hand-heart',
-    categoryName: 'Manager Edge Assistant',
-    cardData: [
-      {
-        title: 'Performance',
-        items: [
-          {
-            id: 'hr-1',
-            text: 'Could you synthesize the strengths and areas of improvement of my employee [employee name] based upon all the feedback given/received in GetSuccess?',
-          },
-        ],
-        variant: 'promptStarters',
-      },
-      {
-        title: 'Engagement',
-        items: [
-          {
-            id: 'hr-2',
-            text: 'What are some best practices I can leverage to maintain or improve team engagement?',
-          },
-        ],
-        variant: 'promptStarters',
-      },
-      {
-        title: 'Learning',
-        items: [
-          {
-            id: 'hr-3',
-            text: "Based on the areas of improvement, which training would you recommend for [employee's name]?",
-          },
-        ],
-        variant: 'promptStarters',
-      },
-    ],
   },
   {
     id: AGENT_NAMES.Legal,
@@ -139,6 +101,15 @@ export const AGENTS: AgentMetadata[] = [
     ],
   },
   {
+    id: AGENT_NAMES.MReview,
+    name: 'MReview',
+    title: 'Finance M-Review',
+    text: 'A unified, automated platform that analyzes and summarizes M Review decks across all BUs, SBUs, and Regions - delivering insights, trends, and benchmarks from current and historical data.',
+    iconType: 'rfp-proposal',
+    categoryName: 'Finance M-Review',
+    cardData: [],
+  },
+  {
     id: AGENT_NAMES.Audit,
     name: 'Audit',
     title: 'Internal Audit Assistant',
@@ -177,6 +148,55 @@ export const AGENTS: AgentMetadata[] = [
         variant: 'promptStarters',
       },
     ],
+  },
+  {
+    id: AGENT_NAMES.HR,
+    name: 'HR',
+    title: 'Manager Edge Assistant',
+    text: 'The Manager Edge Assistant integrates data to give People Managers actionable insights, supporting performance and engagement processes but not replacing judgment—use it as a support tool, not for sensitive decisions, and remain accountable for outcomes.',
+    iconType: 'hand-heart',
+    categoryName: 'Manager Edge Assistant',
+    cardData: [
+      {
+        title: 'Performance',
+        items: [
+          {
+            id: 'hr-1',
+            text: 'Could you synthesize the strengths and areas of improvement of my employee [employee name] based upon all the feedback given/received in GetSuccess?',
+          },
+        ],
+        variant: 'promptStarters',
+      },
+      {
+        title: 'Engagement',
+        items: [
+          {
+            id: 'hr-2',
+            text: 'What are some best practices I can leverage to maintain or improve team engagement?',
+          },
+        ],
+        variant: 'promptStarters',
+      },
+      {
+        title: 'Learning',
+        items: [
+          {
+            id: 'hr-3',
+            text: "Based on the areas of improvement, which training would you recommend for [employee's name]?",
+          },
+        ],
+        variant: 'promptStarters',
+      },
+    ],
+  },
+  {
+    id: AGENT_NAMES.ProcurementConcord,
+    name: 'ProcurementConcord',
+    title: 'Procurement Concord',
+    text: "Your AI-powered Contract Lifecycle Management Assistant 'Procurement CONCORD'. It's here to make working with supplier contracts easy whether you're checking for risks, summarizing key clauses, or comparing documents.",
+    iconType: 'rfp-proposal',
+    categoryName: 'Procurement Concord',
+    cardData: [],
   },
   {
     id: AGENT_NAMES.RFP,
@@ -258,6 +278,7 @@ export const AGENTS: AgentMetadata[] = [
       },
     ],
   },
+  // === Analysts (in web app prompt library order) ===
   {
     id: AGENT_NAMES.data,
     name: 'Data',
@@ -544,15 +565,6 @@ export const AGENTS: AgentMetadata[] = [
         variant: 'promptStarters',
       },
     ],
-  },
-  {
-    id: AGENT_NAMES.Utility,
-    name: 'Utility',
-    title: 'Utility Assistant',
-    text: 'General utilities and tools.',
-    iconType: 'rfp-proposal',
-    categoryName: 'Utility Assistant',
-    cardData: [],
   },
 ];
 

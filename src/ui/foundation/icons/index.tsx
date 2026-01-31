@@ -55,6 +55,8 @@ export { IssueIcon } from './CommonIcons';
 export { ExternalLinkIcon } from './CommonIcons';
 export { FileTextIcon } from './CommonIcons';
 export { NeoLogoText } from './CommonIcons';
+export { PromptLibraryIcon } from './CommonIcons';
+export { SearchWebIcon } from './CommonIcons';
 
 // Agent icon component mapping
 export { AgentIcon } from './AgentIcon';

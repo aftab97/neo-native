@@ -47,4 +47,7 @@ export const ENDPOINTS = {
   REPLICON_TIMESHEETS: '/api/v1/session/getRepliconOpenTimesheets',
   REPLICON_TIME_OFF: '/api/v1/session/getRepliconTimeOffWaitingForApproval',
   VMS_APPROVALS: '/api/v1/session/getVMSApprovals',
+
+  // Prompt Library
+  PROMPT_LIBRARY: '/api/v1/session/promptLibrary',
 } as const;

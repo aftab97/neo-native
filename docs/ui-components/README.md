@@ -55,12 +55,69 @@ src/ui/
 - File attachment display
 
 ### AttachmentSlideout.tsx
-- Slideout drawer for file picker
-- Camera, gallery, documents options
+Slideout drawer with animated navigation between attachments and prompts views.
+
+**Features:**
+- Native iOS-style slide animations between views (250ms, `useNativeDriver: true`)
+- Photos section with camera button and recent photos grid
+- Action rows: Web Search, Add Files, Prompts
+- Expandable drawer with 2-row photo grid when expanded
+
+**Views:**
+- **Attachments view**: Photos + action rows (Web Search, Add Files, Prompts)
+- **Prompts view**: Full PromptLibraryTab component
+
+**Icons Used:**
+- `CameraIcon` - Camera button in photos section
+- `PlusIcon` - "More" button in photos section
+- `SearchWebIcon` - Web Search row (globe with meridians, matches web app)
+- `FileIcon` - Add Files row
+- `PromptLibraryIcon` - Prompts row (document with pencil, matches web app)
+
+**Props:**
+```typescript
+interface AttachmentSlideoutProps {
+  visible: boolean;
+  onClose: () => void;
+  isLiveChatActive?: boolean;  // Affects file type display text
+}
+```
 
 ### AttachmentPreview.tsx
 - Preview attached files
 - Remove individual files
+
+### PromptLibraryTab.tsx
+Multi-screen prompt template library with native slide animations.
+
+**Features:**
+- Categories from AGENTS config (matches web app prompt library order)
+- RBAC-filtered (uses `useAvailableServices` hook)
+- Native iOS-style slide animations (250ms, `useNativeDriver: true`)
+- Search input always visible (filters categories or prompts depending on screen)
+- Shows all categories including those with 0 prompts (matches web app)
+
+**Screens:**
+- **Categories screen**: Header + search + list of category rows (icon, name, count, chevron)
+- **Prompts screen**: Header with category name + search + prompt cards (title, preview, subcategory badge)
+
+**Props:**
+```typescript
+interface PromptLibraryTabProps {
+  onSelectPrompt: () => void;  // Called when prompt selected (closes drawer)
+  onBack: () => void;          // Called when back pressed on categories screen
+}
+```
+
+**Icons Used:**
+- `PromptLibraryIcon` - Category row icons and empty state
+- `SearchIcon` - Search input and no results state
+- `ChevronRightIcon` - Category row indicator
+- `ChevronLeftIcon` - Back button in header
+
+**Styling (matches web app input.css):**
+- Search input: white/black background, gray-300/gray-800 border, 12px radius, 40px height
+- Placeholder: "Search for prompts"
 
 ### ChatAIFeedback.tsx
 - Thumbs up/down
@@ -153,4 +210,95 @@ src/ui/
 10. **Notifications: Dismissed tracking**
     ```typescript
     const isDismissed = useNotificationStore((s) => s.isDismissed(id));
+    ```
+
+11. **AttachmentSlideout: View state reset on close**
+    ```typescript
+    useEffect(() => {
+      if (!visible) {
+        setRecentPhotos([]);
+        setCurrentView('attachments');  // Reset to main view
+      }
+    }, [visible]);
+    ```
+
+12. **PromptLibraryTab: Multi-screen navigation with animation**
+    ```typescript
+    const handleBackPress = () => {
+      if (currentScreen === 'prompts') {
+        handleBackToCategories();  // Animated slide back to categories
+      } else {
+        onBack();  // Go back to attachments view
+      }
+    };
+
+    const handleCategorySelect = (category: CategoryInfo) => {
+      setSelectedCategory(category);
+      setCurrentScreen('prompts');
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+    ```
+
+13. **PromptLibraryTab: Categories from AGENTS with RBAC (shows all)**
+    ```typescript
+    const categories = useMemo((): CategoryInfo[] => {
+      // Get available agents based on RBAC, only those with categoryName
+      const availableAgents = availableServices.length === 0
+        ? AGENTS.filter((agent) => agent.categoryName)
+        : AGENTS.filter((agent) => agent.categoryName && availableServices.includes(agent.id));
+
+      // Map to CategoryInfo - show ALL agents (even with 0 prompts) to match web app
+      return availableAgents.map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        categoryName: agent.categoryName!,
+        promptCount: promptCountsByCategory[agent.categoryName!] || 0,
+      }));
+    }, [data?.prompts, availableServices, promptCountsByCategory]);
+    ```
+
+14. **PromptLibraryTab: Set input value on selection**
+    ```typescript
+    const handleSelectPrompt = (prompt: PromptLibraryPrompt) => {
+      setInputValue(prompt.prompt);  // Fill ChatInput via chatStore
+      onSelectPrompt();              // Close drawer
+    };
+    ```
+
+15. **AttachmentSlideout: Animated view transitions**
+    ```typescript
+    // Both views rendered simultaneously, positioned with transforms
+    const attachmentsTranslateX = slideAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -SCREEN_WIDTH],
+    });
+    const promptsTranslateX = slideAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [SCREEN_WIDTH, 0],
+    });
+    // pointerEvents toggled to prevent interaction with off-screen view
+    ```
+
+16. **PromptLibraryTab: Search scope changes by screen**
+    - Categories screen: Filters by `categoryName` and `name`
+    - Prompts screen: Filters by `title`, `prompt`, `agent`, and `subCategory`
+
+17. **PromptLibraryTab: Loading waits for both APIs**
+    ```typescript
+    const isLoading = isPromptsLoading || isServicesLoading;
+    ```
+
+18. **AttachmentSlideout: Animation reset on close**
+    ```typescript
+    useEffect(() => {
+      if (!visible) {
+        setRecentPhotos([]);
+        setCurrentView('attachments');
+        slideAnim.setValue(0);  // Reset animation position
+      }
+    }, [visible]);
     ```
