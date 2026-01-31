@@ -74,6 +74,32 @@ interface DictateBarProps {
 - Feedback component (AI only)
 - Sources pills
 - Routing status
+- AI reasoning/thought blocks
+
+### AIReasoningBlock.tsx
+Expandable thought/reasoning display for AI messages.
+
+**Features:**
+- Collapsible header with title and chevron icon
+- Chevron rotates 180° when expanded
+- Expanded content with left border indicator
+- Markdown rendering for thought content
+
+**Props:**
+```typescript
+interface AIReasoningBlockProps {
+  thought: string;       // Full reasoning content (markdown supported)
+  thoughtTitle: string;  // Clickable header text
+}
+```
+
+**Styling:**
+- Header: flex row, gap 8px, secondary text color
+- Content: left border, 20px padding-left, 150% line-height
+- Chevron: 12px, rotates on expand
+
+**Icons Used:**
+- `ChevronDownIcon` - Expand/collapse indicator
 
 ### UserBlock.tsx
 - User message bubble

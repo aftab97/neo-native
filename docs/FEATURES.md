@@ -269,7 +269,34 @@ Voice-to-text with audio visualization using `@react-native-voice/voice` for spe
 
 ---
 
-## 15. Known Incomplete Features
+## 15. AI Reasoning/Thought Display
+**Files:** `src/ui/components/chat/AIReasoningBlock.tsx`, `src/ui/components/chat/AIBlock.tsx`
+
+Expandable "thought" blocks showing AI reasoning process. Displays when the AI includes reasoning content in its response.
+
+**Key Points:**
+- Collapsible header with title and chevron icon
+- Chevron rotates 180° when expanded
+- Expanded content has left border indicator
+- Markdown rendering for thought content
+- Rendered from `contents` array where `type === 'thought'`
+
+**Props:**
+```typescript
+interface AIReasoningBlockProps {
+  thought: string;       // Full reasoning content
+  thoughtTitle: string;  // Clickable header text
+}
+```
+
+**Edge Cases:**
+- Returns null if thought or thoughtTitle is missing
+- Multiple thoughts render as separate blocks
+- Supports markdown in thought content
+
+---
+
+## 16. Known Incomplete Features
 
 - Support screen card clicks (logs only, no navigation)
 - Terms screen (placeholder)

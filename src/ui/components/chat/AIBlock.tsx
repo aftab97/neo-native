@@ -20,6 +20,7 @@ import { AIMessageAttachments } from './AIMessageAttachments';
 import { ChatAIFeedback } from './ChatAIFeedback';
 import { SourcesPills } from './SourcesPills';
 import { RoutingStatus } from './RoutingStatus';
+import { AIReasoningBlock } from './AIReasoningBlock';
 import { CloseIcon } from '../../foundation/icons';
 
 interface AIBlockProps {
@@ -300,6 +301,12 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
     return typeStr === 'image';
   }) || [];
 
+  // Get thought/reasoning content from contents array
+  const thoughtContents = message.contents?.filter((c) => {
+    const typeStr = String(c.type).toLowerCase();
+    return typeStr === 'thought';
+  }) || [];
+
   // Render images from contents array
   const renderImageContents = () => {
     if (imageContents.length === 0) return null;
@@ -338,6 +345,26 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
     });
   };
 
+  // Render thought/reasoning blocks from contents array
+  const renderThoughtContents = () => {
+    if (thoughtContents.length === 0) return null;
+
+    return thoughtContents.map((thoughtContent, idx) => {
+      const thought = thoughtContent.thought;
+      const thoughtTitle = thoughtContent.thought_title;
+
+      if (!thought || !thoughtTitle) return null;
+
+      return (
+        <AIReasoningBlock
+          key={`thought-${idx}`}
+          thought={thought}
+          thoughtTitle={thoughtTitle}
+        />
+      );
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Routing Status - expandable component (always rendered, handles empty state internally) */}
@@ -345,6 +372,9 @@ export const AIBlock: React.FC<AIBlockProps> = ({ message, onCardSubmit, isLiveC
         status={message.status}
         metadata={message.metadata as Record<string, any> | null}
       />
+
+      {/* AI Reasoning/Thought blocks */}
+      {renderThoughtContents()}
 
       {/* Images from AI response files */}
       {imageFiles.length > 0 && <AIMessageImages files={imageFiles} />}
