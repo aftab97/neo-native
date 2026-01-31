@@ -9,3 +9,4 @@ export { AIMessageAttachments } from './AIMessageAttachments';
 export { UserAttachments } from './UserAttachments';
 export { ChatAIFeedback } from './ChatAIFeedback';
 export { PromptLibraryTab } from './PromptLibraryTab';
+export { DictateBar } from './DictateBar';

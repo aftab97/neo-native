@@ -436,7 +436,142 @@ type PromptLibraryResponse = {
 
 ---
 
-## 14. Known Incomplete Features
+## 14. Voice Dictation
+**Files:** `src/hooks/useDictation.ts`, `src/ui/components/chat/DictateBar.tsx`, `src/ui/components/chat/ChatInput.tsx`
+
+Voice-to-text functionality that allows users to dictate messages instead of typing. Matches the web app's dictation feature with audio visualization.
+
+### Features
+
+- **Microphone button** in ChatInput next to the send button (same placement as web app)
+- **Audio visualization** with animated bars showing microphone input levels
+- **Timer display** showing recording duration (MM:SS format)
+- **Cancel/Complete buttons** to discard or accept the dictated text
+
+### Components
+
+| Component | Purpose |
+|-----------|---------|
+| `useDictation.ts` | Hook managing dictation state, audio recording, and speech recognition |
+| `DictateBar.tsx` | Audio visualization UI with timer and action buttons |
+| `MicrophoneIcon` | Microphone icon matching lucide-react Mic icon |
+
+### User Flow
+
+```
+User taps microphone button in ChatInput
+    ↓
+Permission requested (first time)
+    ↓
+DictateBar replaces input area
+    ↓
+Audio visualization shows microphone levels
+    ↓
+Timer counts up from 00:00
+    ↓
+User speaks (speech converted to text)
+    ↓
+User taps Complete → text fills ChatInput
+  or
+User taps Cancel → recording discarded
+    ↓
+Normal input mode restored
+```
+
+### Installation Requirements
+
+The dictation feature requires `expo-av` for audio recording. Install it with:
+
+```bash
+npx expo install expo-av
+```
+
+**Optional (for speech-to-text):**
+The current implementation captures audio for visualization. For actual speech-to-text transcription, install one of:
+
+```bash
+# Option A: Expo Speech Recognition (Expo SDK 52+)
+npx expo install expo-speech-recognition
+
+# Option B: React Native Voice
+npm install @react-native-voice/voice
+```
+
+### Audio Visualization
+
+- **Number of bars:** 48 (optimized for mobile, web uses 96)
+- **Update interval:** 80ms
+- **Bar appearance:** Rounded rectangles with gray background bars and darker active bars
+- **Level mapping:** Audio metering (-60dB to 0dB) normalized to bar heights (4-16px)
+
+### DictateBar Styling
+
+| Property | Light Theme | Dark Theme |
+|----------|-------------|------------|
+| Background | #ffffff | gray-800 |
+| Inactive bars | gray-300 | gray-600 |
+| Active bars | gray-500 | gray-300 |
+| Timer text | gray-500 | gray-400 |
+| Icon color | gray-600 | gray-300 |
+
+### Edge Cases
+
+1. **Microphone permission denied**
+   - Shows alert explaining permission is required
+   - Does not enter dictation mode
+
+2. **Recording error**
+   - Shows error alert
+   - Returns to normal input mode
+
+3. **Empty transcription on complete**
+   - If no speech was recognized, completes without changing input
+
+4. **Dictation during live chat**
+   - Works normally, fills ChatInput which sends to live chat agent
+
+5. **Files attached during dictation start**
+   - AttachmentPreview hidden during dictation mode
+   - Files preserved when dictation completes
+
+6. **Keyboard visible when starting dictation**
+   - Keyboard dismissed automatically
+   - DictateBar shown in place of input
+
+7. **Component unmount during recording**
+   - Cleanup effect stops recording and audio monitoring
+
+8. **Timer accuracy**
+   - Uses setInterval with 1000ms
+   - Independent of audio level updates
+
+9. **Audio mode configuration (iOS)**
+   - Sets `allowsRecordingIOS: true` for recording
+   - Resets to `false` when recording stops
+   - `playsInSilentModeIOS: true` ensures recording works in silent mode
+
+### Hook API
+
+```typescript
+interface UseDictationReturn {
+  // State
+  isDictateActive: boolean;  // Whether dictation UI is shown
+  isRecording: boolean;      // Whether actively recording
+  dictateText: string;       // Transcribed text
+  timer: number;             // Seconds elapsed
+  audioLevels: number[];     // Array of bar heights for visualization
+
+  // Actions
+  startDictate: () => Promise<void>;   // Start recording
+  cancelDictate: () => void;           // Discard and exit
+  completeDictate: () => void;         // Accept text and exit
+  setIsDictateActive: (active: boolean) => void;
+}
+```
+
+---
+
+## 15. Known Incomplete Features
 
 - Support screen card clicks (logs only, no navigation)
 - Terms screen (placeholder)

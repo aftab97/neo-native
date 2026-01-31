@@ -11,9 +11,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from 'ttag';
 import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../../store';
-import { PlusIcon } from '../../foundation/icons';
+import { useDictation } from '../../../hooks';
+import { PlusIcon, MicrophoneIcon } from '../../foundation/icons';
 import { AttachmentSlideout } from './AttachmentSlideout';
 import { AttachmentPreview } from './AttachmentPreview';
+import { DictateBar } from './DictateBar';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -51,6 +53,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [showAttachmentSlideout, setShowAttachmentSlideout] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // Dictation hook
+  const {
+    isDictateActive,
+    audioLevels,
+    startDictate,
+    cancelDictate,
+    completeDictate,
+  } = useDictation({
+    setInputValue: (value: string) => {
+      setLocalValue(value);
+    },
+  });
 
   // Track keyboard visibility to adjust bottom padding
   useEffect(() => {
@@ -140,6 +155,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     return null;
   }
 
+  // Handle dictation button press
+  const handleDictatePress = () => {
+    Keyboard.dismiss();
+    startDictate();
+  };
+
   return (
     <View
       style={[
@@ -147,74 +168,105 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         { paddingBottom: bottomPadding, backgroundColor },
       ]}
     >
-      {/* Attachment Preview */}
-      {hasFiles && <AttachmentPreview />}
+      {/* Attachment Preview - hide during dictation */}
+      {hasFiles && !isDictateActive && <AttachmentPreview />}
 
-      <View
-        style={[
-          styles.inputContainer,
-          {
-            backgroundColor: inputBgColor,
-            borderColor,
-          },
-        ]}
-      >
-        {/* Plus Button */}
-        <TouchableOpacity
-          style={styles.plusButton}
-          onPress={toggleAttachmentSlideout}
-          accessibilityLabel="Add attachment"
-          accessibilityRole="button"
-        >
-          <PlusIcon size={22} color={isDarkTheme ? '#9ea6ae' : '#646b82'} />
-        </TouchableOpacity>
-
-        <TextInput
-          ref={inputRef}
-          style={[styles.input, { color: textColor }]}
-          placeholder={effectivePlaceholder}
-          placeholderTextColor={placeholderColor}
-          value={localValue}
-          onChangeText={handleChangeText}
-          onFocus={() => {
-            setIsFocused(true);
-            setShowAttachmentSlideout(false);
-          }}
-          onBlur={() => setIsFocused(false)}
-          onSubmitEditing={handleSend}
-          multiline
-          maxLength={10000}
-          editable={!isLoading}
-          returnKeyType="send"
-          blurOnSubmit={false}
-          accessibilityLabel="Chat input"
-          accessibilityHint="Type your message here"
-        />
-
-        <TouchableOpacity
+      {isDictateActive ? (
+        /* Dictation Mode - Replace input with DictateBar */
+        <View
           style={[
-            styles.sendButton,
+            styles.inputContainer,
             {
-              backgroundColor: isGenerating
-                ? '#ef4444'
-                : canSend
-                ? accentColor
-                : isDarkTheme
-                ? '#4b555e'
-                : '#e0e3e6',
+              backgroundColor: inputBgColor,
+              borderColor,
             },
           ]}
-          onPress={isGenerating ? handleCancel : handleSend}
-          disabled={!canSend && !isGenerating}
-          activeOpacity={0.7}
-          accessibilityLabel={isGenerating ? 'Stop generating' : 'Send message'}
-          accessibilityRole="button"
         >
-          <Text style={[styles.buttonIcon, { color: canSend || isGenerating ? '#ffffff' : placeholderColor }]}>
-            {isGenerating ? '■' : '➤'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <DictateBar
+            audioLevels={audioLevels}
+            onCancel={cancelDictate}
+            onComplete={completeDictate}
+          />
+        </View>
+      ) : (
+        /* Normal Input Mode */
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              backgroundColor: inputBgColor,
+              borderColor,
+            },
+          ]}
+        >
+          {/* Plus Button */}
+          <TouchableOpacity
+            style={styles.plusButton}
+            onPress={toggleAttachmentSlideout}
+            accessibilityLabel="Add attachment"
+            accessibilityRole="button"
+          >
+            <PlusIcon size={22} color={isDarkTheme ? '#9ea6ae' : '#646b82'} />
+          </TouchableOpacity>
+
+          <TextInput
+            ref={inputRef}
+            style={[styles.input, { color: textColor }]}
+            placeholder={effectivePlaceholder}
+            placeholderTextColor={placeholderColor}
+            value={localValue}
+            onChangeText={handleChangeText}
+            onFocus={() => {
+              setIsFocused(true);
+              setShowAttachmentSlideout(false);
+            }}
+            onBlur={() => setIsFocused(false)}
+            onSubmitEditing={handleSend}
+            multiline
+            maxLength={10000}
+            editable={!isLoading}
+            returnKeyType="send"
+            blurOnSubmit={false}
+            accessibilityLabel="Chat input"
+            accessibilityHint="Type your message here"
+          />
+
+          {/* Microphone Button - positioned next to send button like web app */}
+          <TouchableOpacity
+            style={styles.micButton}
+            onPress={handleDictatePress}
+            accessibilityLabel="Start dictation"
+            accessibilityRole="button"
+          >
+            <MicrophoneIcon size={24} color={isDarkTheme ? '#9ea6ae' : '#646b82'} />
+          </TouchableOpacity>
+
+          {/* Send/Stop Button */}
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: isGenerating
+                  ? '#ef4444'
+                  : canSend
+                  ? accentColor
+                  : isDarkTheme
+                  ? '#4b555e'
+                  : '#e0e3e6',
+              },
+            ]}
+            onPress={isGenerating ? handleCancel : handleSend}
+            disabled={!canSend && !isGenerating}
+            activeOpacity={0.7}
+            accessibilityLabel={isGenerating ? 'Stop generating' : 'Send message'}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.buttonIcon, { color: canSend || isGenerating ? '#ffffff' : placeholderColor }]}>
+              {isGenerating ? '■' : '➤'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Attachment Slideout - uses shared SlideoutDrawer component */}
       <AttachmentSlideout
@@ -258,6 +310,13 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === 'ios' ? 8 : 4,
     paddingHorizontal: 8,
     maxHeight: 120,
+  },
+  micButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sendButton: {
     width: 36,

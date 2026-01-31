@@ -4,3 +4,4 @@ export { useLiveChatListener, publishLiveChatTrigger } from "./useLiveChatListen
 export { useFileUpload, getFileTypeLabel, isImageFile, isArchiveFile } from "./useFileUpload";
 export { useEffectiveLocale, availableLocales, getDeviceLocale, getEffectiveLocale, type AvailableLocale } from "./useEffectiveLocale";
 export { useAvailableServices } from "./useAvailableServices";
+export { useDictation } from "./useDictation";

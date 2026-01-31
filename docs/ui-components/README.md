@@ -37,9 +37,34 @@ src/ui/
 ### ChatInput.tsx
 - Multiline TextInput
 - Plus button for attachments
+- Microphone button for voice dictation
 - Send/Cancel button toggle
 - Live chat mode support
 - Hidden during feedback input focus
+- Dictation mode replaces input with DictateBar
+
+### DictateBar.tsx
+Voice dictation UI component with audio visualization.
+
+**Features:**
+- 48-bar audio level visualization (optimized for mobile)
+- Recording timer display (MM:SS format)
+- Cancel button to discard recording
+- Complete button to accept transcribed text
+
+**Props:**
+```typescript
+interface DictateBarProps {
+  timer: number;          // Seconds elapsed
+  audioLevels: number[];  // Array of bar heights (4-16px)
+  onCancel: () => void;   // Discard recording
+  onComplete: () => void; // Accept transcription
+}
+```
+
+**Icons Used:**
+- `CloseIcon` - Cancel button
+- `CheckIcon` - Complete button
 
 ### AIBlock.tsx
 - Markdown rendering (`react-native-markdown-display`)
@@ -301,4 +326,52 @@ interface PromptLibraryTabProps {
         slideAnim.setValue(0);  // Reset animation position
       }
     }, [visible]);
+    ```
+
+19. **DictateBar: Audio level visualization**
+    ```typescript
+    // Normalize metering dB to bar heights
+    const normalizedLevel = Math.max(0, (status.metering + 60) / 60);
+    const barHeight = Math.max(4, Math.min(16, normalizedLevel * 16));
+    setAudioLevels((prev) => {
+      const next = [...prev];
+      next.shift();
+      next.push(barHeight);
+      return next;
+    });
+    ```
+
+20. **ChatInput: Dictation mode replaces input**
+    ```typescript
+    {isDictateActive ? (
+      <DictateBar ... />
+    ) : (
+      <TextInput ... />
+      <MicrophoneIcon />
+      <SendButton />
+    )}
+    ```
+
+21. **useDictation: Cleanup on unmount**
+    ```typescript
+    useEffect(() => {
+      return () => {
+        stopAudioLevelMonitoring();
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
+        if (recordingRef.current) {
+          recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        }
+      };
+    }, [stopAudioLevelMonitoring]);
+    ```
+
+22. **DictateBar: Timer formatting**
+    ```typescript
+    const formatTime = (sec: number): string => {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
     ```

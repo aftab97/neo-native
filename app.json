@@ -18,6 +18,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Neo needs access to your camera to take photos for upload.",
         "NSPhotoLibraryUsageDescription": "Neo needs access to your photo library to select images for upload.",
+        "NSMicrophoneUsageDescription": "Neo needs access to your microphone for voice dictation.",
+        "NSSpeechRecognitionUsageDescription": "Neo needs access to speech recognition to convert your voice to text.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
