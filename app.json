@@ -46,6 +46,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidXFix",
       "expo-secure-store",
       "expo-font",
       [
