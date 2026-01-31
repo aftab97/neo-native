@@ -11,6 +11,8 @@ For in-depth documentation with edge cases and behaviors, see subdirectories:
 | File Upload | [docs/file-upload/](./file-upload/) |
 | History & Sessions | [docs/history/](./history/) |
 | Multi-Agent System | [docs/agents/](./agents/) |
+| Prompt Library | [docs/prompt-library/](./prompt-library/) |
+| Voice Dictation | [docs/dictation/](./dictation/) |
 | Authentication | [docs/auth/](./auth/) |
 | Navigation | [docs/navigation/](./navigation/) |
 | State Management | [docs/state/](./state/) |
@@ -238,336 +240,32 @@ else → ['chat']                                      // Homepage
 ---
 
 ## 13. Prompt Library
-**Files:** `src/api/promptLibrary.ts`, `src/ui/components/chat/PromptLibraryTab.tsx`, `src/ui/components/chat/AttachmentSlideout.tsx`
+**Files:** `src/api/promptLibrary.ts`, `src/ui/components/chat/PromptLibraryTab.tsx`
 
-A searchable library of pre-built prompt templates organized by agent/category, accessible via the AttachmentSlideout drawer. Matches the web app's prompt library modal functionality.
+Searchable prompt template library accessible via AttachmentSlideout. RBAC-filtered categories with animated multi-screen navigation.
 
-### Features
+**See:** [docs/prompt-library/](./prompt-library/) for full documentation.
 
-- **Multi-screen navigation** within the drawer with native iOS-style slide animations
-- **RBAC-filtered categories** - only shows agents the user has access to
-- **Search functionality** - filters prompts by title, prompt text, agent, and subcategory
-- **Category ordering** - matches web app's prompt library modal sidebar order
-- **One-tap selection** - fills ChatInput with prompt text and closes drawer
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| `PromptLibraryTab.tsx` | Main component with categories/prompts screens |
-| `AttachmentSlideout.tsx` | Parent drawer with "Prompts" row button |
-| `promptLibrary.ts` | API hook (`useGetPrompts`) and types |
-
-### Navigation Flow
-
-```
-AttachmentSlideout (main)
-    ↓ tap "Prompts" row
-Categories Screen (animated slide-in)
-    ↓ tap category row
-Prompts Screen (animated slide-in)
-    ↓ tap prompt card
-ChatInput filled → Drawer closes
-```
-
-### Screen Details
-
-**1. Attachments Screen (AttachmentSlideout)**
-- Photos section with camera button and recent photos
-- Web Search row (SearchWebIcon)
-- Add Files row (FileIcon)
-- Prompts row (PromptLibraryIcon) → navigates to Categories
-
-**2. Categories Screen (PromptLibraryTab)**
-- Header with back button and title "Prompts"
-- Search input (always visible)
-- List of category rows showing:
-  - PromptLibraryIcon
-  - Category name (from AGENTS config `categoryName`)
-  - Prompt count for that category
-  - Chevron right indicator
-
-**3. Prompts Screen (PromptLibraryTab)**
-- Header with back button and category name as title
-- Search input (always visible, filters within category)
-- Grid of prompt cards showing:
-  - Title (2 lines max)
-  - Prompt preview (3 lines max, truncated)
-  - Subcategory badge
-
-### Data Flow
-
-```typescript
-// 1. API fetches all prompts
-const { data, isLoading, isError } = useGetPrompts();
-
-// 2. Categories derived from AGENTS config + prompt counts
-const categories = AGENTS
-  .filter(agent => agent.categoryName && availableServices.includes(agent.id))
-  .map(agent => ({
-    id: agent.id,
-    categoryName: agent.categoryName,
-    promptCount: promptCountsByCategory[agent.categoryName] || 0,
-  }));
-
-// 3. Prompts filtered by selected category and search
-const filteredPrompts = data.prompts.filter(prompt =>
-  prompt.agent === selectedCategory.categoryName &&
-  (prompt.title.includes(search) || prompt.prompt.includes(search))
-);
-
-// 4. Selection fills ChatInput
-const handleSelectPrompt = (prompt) => {
-  setInputValue(prompt.prompt);  // via chatStore
-  onSelectPrompt();              // closes drawer
-};
-```
-
-### Animation Details
-
-- **Duration**: 250ms
-- **Type**: Horizontal slide (translateX)
-- **Native driver**: Yes (`useNativeDriver: true`)
-- **Forward navigation**: New screen slides in from right
-- **Back navigation**: Current screen slides out to right
-
-```typescript
-// Animated transforms
-const categoriesTranslateX = slideAnim.interpolate({
-  inputRange: [0, 1],
-  outputRange: [0, -SCREEN_WIDTH],  // slides left when going forward
-});
-const promptsTranslateX = slideAnim.interpolate({
-  inputRange: [0, 1],
-  outputRange: [SCREEN_WIDTH, 0],   // slides in from right
-});
-```
-
-### Styling (Matches Web App)
-
-**Search Input:**
-| Property | Light | Dark |
-|----------|-------|------|
-| Background | `#ffffff` (gray-000) | `#000000` (gray-1000) |
-| Text | `#21232c` (gray-900) | `#f0f2f6` (gray-100) |
-| Placeholder | `#929aaf` (gray-400) | `#4c5366` (gray-600) |
-| Border | `#cfd4e2` (gray-300) | `#2b2f3b` (gray-800) |
-| Border radius | 12px |
-| Height | 40px |
-| Placeholder text | "Search for prompts" |
-
-### Edge Cases
-
-1. **Empty prompts response**
-   - Shows empty state with PromptLibraryIcon and "No prompts available" message
-   - Categories screen still accessible but all counts show 0
-
-2. **Search with no results**
-   - Shows SearchIcon with "No prompts match your search" / "No categories match your search"
-   - Search persists when navigating between categories and prompts screens
-
-3. **API error**
-   - Shows error state with "Failed to load prompts" message
-   - Retry button triggers `refetch()`
-
-4. **Loading state**
-   - Shows ActivityIndicator with "Loading prompts..." text
-   - Waits for both `useGetPrompts()` and `useAvailableServices()` to complete
-
-5. **RBAC filtering**
-   - If `availableServices` is empty (still loading), shows all agents with `categoryName`
-   - Once loaded, filters to only show agents user has access to
-   - Controlled by `SHOW_ALL_AGENTS` flag in `src/api/env.ts` for testing
-
-6. **Categories with zero prompts**
-   - Still displayed (matches web app behavior)
-   - Shows "0 prompts" subtitle
-   - User can still navigate into category (will show empty state)
-
-7. **Drawer close resets state**
-   - When drawer closes, resets to attachments view
-   - Clears search text
-   - Resets animation position
-   - Clears selected category
-
-8. **Back button behavior**
-   - On prompts screen: goes back to categories (animated)
-   - On categories screen: goes back to attachments view (animated)
-
-9. **Search scope**
-   - On categories screen: filters category names
-   - On prompts screen: filters prompts within selected category by title, prompt text, agent, and subcategory
-
-10. **Category ordering**
-    - Uses AGENTS array order as single source of truth
-    - Matches web app's prompt library modal sidebar order:
-      General → Contracts Assistant → Finance Assistant → Finance M-Review → Internal Audit Assistant → Manager Edge Assistant → Procurement Concord → Proposal Assistant → Unleash Assistant → Sales Analyst → Finance Analyst P&L → Finance Analyst FTE → Finance Analyst Revenue → GTD Demand → GTD Supply → GTD Skills
-
-11. **Prompt selection during live chat**
-    - Prompt selection works normally during live chat sessions
-    - Selected prompt fills ChatInput, user can edit before sending
-
-12. **Long prompt text**
-    - Title truncated to 2 lines with ellipsis
-    - Prompt preview truncated to 3 lines with ellipsis
-    - Full prompt text used when filling ChatInput
-
-### API
-
-**Endpoint:** `POST /api/v1/session/promptLibrary`
-
-**Response Type:**
-```typescript
-type PromptLibraryPrompt = {
-  agent: string;        // Category name (e.g., "Proposal Assistant")
-  subCategory: string;  // Subcategory (e.g., "Risk Analysis")
-  title: string;        // Display title
-  prompt: string;       // Full prompt text
-};
-
-type PromptLibraryResponse = {
-  message: string;
-  prompts: PromptLibraryPrompt[];
-  total: number;
-};
-```
-
-**Caching:** React Query with default stale time (prompts rarely change)
+**Key Points:**
+- Multi-screen navigation with 250ms slide animations
+- Categories from AGENTS config, filtered by user's available services
+- Search filters by title, prompt text, agent, and subcategory
+- Tap prompt → fills ChatInput → drawer closes
 
 ---
 
 ## 14. Voice Dictation
-**Files:** `src/hooks/useDictation.ts`, `src/ui/components/chat/DictateBar.tsx`, `src/ui/components/chat/ChatInput.tsx`
+**Files:** `src/hooks/useDictation.ts`, `src/ui/components/chat/DictateBar.tsx`
 
-Voice-to-text functionality that allows users to dictate messages instead of typing. Matches the web app's dictation feature with audio visualization.
+Voice-to-text with audio visualization using `@react-native-voice/voice` for speech recognition.
 
-### Features
+**See:** [docs/dictation/](./dictation/) for full documentation.
 
-- **Microphone button** in ChatInput next to the send button (same placement as web app)
-- **Audio visualization** with animated bars showing microphone input levels
-- **Timer display** showing recording duration (MM:SS format)
-- **Cancel/Complete buttons** to discard or accept the dictated text
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| `useDictation.ts` | Hook managing dictation state, audio recording, and speech recognition |
-| `DictateBar.tsx` | Audio visualization UI with timer and action buttons |
-| `MicrophoneIcon` | Microphone icon matching lucide-react Mic icon |
-
-### User Flow
-
-```
-User taps microphone button in ChatInput
-    ↓
-Permission requested (first time)
-    ↓
-DictateBar replaces input area
-    ↓
-Audio visualization shows microphone levels
-    ↓
-Timer counts up from 00:00
-    ↓
-User speaks (speech converted to text)
-    ↓
-User taps Complete → text fills ChatInput
-  or
-User taps Cancel → recording discarded
-    ↓
-Normal input mode restored
-```
-
-### Installation Requirements
-
-The dictation feature requires `expo-av` for audio recording. Install it with:
-
-```bash
-npx expo install expo-av
-```
-
-**Optional (for speech-to-text):**
-The current implementation captures audio for visualization. For actual speech-to-text transcription, install one of:
-
-```bash
-# Option A: Expo Speech Recognition (Expo SDK 52+)
-npx expo install expo-speech-recognition
-
-# Option B: React Native Voice
-npm install @react-native-voice/voice
-```
-
-### Audio Visualization
-
-- **Number of bars:** 48 (optimized for mobile, web uses 96)
-- **Update interval:** 80ms
-- **Bar appearance:** Rounded rectangles with gray background bars and darker active bars
-- **Level mapping:** Audio metering (-60dB to 0dB) normalized to bar heights (4-16px)
-
-### DictateBar Styling
-
-| Property | Light Theme | Dark Theme |
-|----------|-------------|------------|
-| Background | #ffffff | gray-800 |
-| Inactive bars | gray-300 | gray-600 |
-| Active bars | gray-500 | gray-300 |
-| Timer text | gray-500 | gray-400 |
-| Icon color | gray-600 | gray-300 |
-
-### Edge Cases
-
-1. **Microphone permission denied**
-   - Shows alert explaining permission is required
-   - Does not enter dictation mode
-
-2. **Recording error**
-   - Shows error alert
-   - Returns to normal input mode
-
-3. **Empty transcription on complete**
-   - If no speech was recognized, completes without changing input
-
-4. **Dictation during live chat**
-   - Works normally, fills ChatInput which sends to live chat agent
-
-5. **Files attached during dictation start**
-   - AttachmentPreview hidden during dictation mode
-   - Files preserved when dictation completes
-
-6. **Keyboard visible when starting dictation**
-   - Keyboard dismissed automatically
-   - DictateBar shown in place of input
-
-7. **Component unmount during recording**
-   - Cleanup effect stops recording and audio monitoring
-
-8. **Timer accuracy**
-   - Uses setInterval with 1000ms
-   - Independent of audio level updates
-
-9. **Audio mode configuration (iOS)**
-   - Sets `allowsRecordingIOS: true` for recording
-   - Resets to `false` when recording stops
-   - `playsInSilentModeIOS: true` ensures recording works in silent mode
-
-### Hook API
-
-```typescript
-interface UseDictationReturn {
-  // State
-  isDictateActive: boolean;  // Whether dictation UI is shown
-  isRecording: boolean;      // Whether actively recording
-  dictateText: string;       // Transcribed text
-  timer: number;             // Seconds elapsed
-  audioLevels: number[];     // Array of bar heights for visualization
-
-  // Actions
-  startDictate: () => Promise<void>;   // Start recording
-  cancelDictate: () => void;           // Discard and exit
-  completeDictate: () => void;         // Accept text and exit
-  setIsDictateActive: (active: boolean) => void;
-}
-```
+**Key Points:**
+- Microphone button next to send button (matches web app)
+- 48-bar audio waveform visualization
+- Cancel (X) and Complete (checkmark) buttons
+- Falls back to simulated audio levels if expo-av not installed
 
 ---
 

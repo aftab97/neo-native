@@ -48,14 +48,12 @@ Voice dictation UI component with audio visualization.
 
 **Features:**
 - 48-bar audio level visualization (optimized for mobile)
-- Recording timer display (MM:SS format)
 - Cancel button to discard recording
 - Complete button to accept transcribed text
 
 **Props:**
 ```typescript
 interface DictateBarProps {
-  timer: number;          // Seconds elapsed
   audioLevels: number[];  // Array of bar heights (4-16px)
   onCancel: () => void;   // Discard recording
   onComplete: () => void; // Accept transcription
@@ -65,6 +63,8 @@ interface DictateBarProps {
 **Icons Used:**
 - `CloseIcon` - Cancel button
 - `CheckIcon` - Complete button
+
+**See:** [docs/dictation/](../dictation/) for full documentation.
 
 ### AIBlock.tsx
 - Markdown rendering (`react-native-markdown-display`)
@@ -331,8 +331,8 @@ interface PromptLibraryTabProps {
 19. **DictateBar: Audio level visualization**
     ```typescript
     // Normalize metering dB to bar heights
-    const normalizedLevel = Math.max(0, (status.metering + 60) / 60);
-    const barHeight = Math.max(4, Math.min(16, normalizedLevel * 16));
+    const normalizedLevel = Math.max(0, (status.metering + 50) / 50);
+    const barHeight = 4 + normalizedLevel * 12;
     setAudioLevels((prev) => {
       const next = [...prev];
       next.shift();
@@ -356,22 +356,13 @@ interface PromptLibraryTabProps {
     ```typescript
     useEffect(() => {
       return () => {
-        stopAudioLevelMonitoring();
-        if (timerIntervalRef.current) {
-          clearInterval(timerIntervalRef.current);
+        if (audioLevelIntervalRef.current) {
+          clearInterval(audioLevelIntervalRef.current);
         }
         if (recordingRef.current) {
-          recordingRef.current.stopAndUnloadAsync().catch(() => {});
+          recordingRef.current.stopAndUnloadAsync?.().catch(() => {});
         }
+        Voice.destroy().catch(() => {});
       };
-    }, [stopAudioLevelMonitoring]);
-    ```
-
-22. **DictateBar: Timer formatting**
-    ```typescript
-    const formatTime = (sec: number): string => {
-      const m = Math.floor(sec / 60).toString().padStart(2, '0');
-      const s = (sec % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    };
+    }, []);
     ```
