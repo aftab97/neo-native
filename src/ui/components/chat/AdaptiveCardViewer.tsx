@@ -8,8 +8,8 @@ import {
   Linking,
   TextStyle,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { colors } from '../../foundation/colors/colors';
 
 interface AdaptiveCardViewerProps {
   content: any;

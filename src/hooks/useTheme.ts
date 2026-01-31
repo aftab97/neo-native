@@ -1,5 +1,5 @@
 import { useLayoutStore } from '../store';
-import { semantic, colors } from '../theme/colors';
+import { semantic, colors } from '../ui/foundation/colors/colors';
 
 /**
  * Hook to get theme-aware colors

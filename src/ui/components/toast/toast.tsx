@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePopupStore, Toast as ToastType } from '../../store';
+import { usePopupStore, Toast as ToastType } from '../../../store';
 
 const ToastItem: React.FC<{
   toast: ToastType;

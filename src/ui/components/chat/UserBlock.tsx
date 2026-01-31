@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { ChatMessage } from '../../types/chat';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { ChatMessage } from '../../../types/chat';
+import { colors } from '../../foundation/colors/colors';
 import { UserAttachments } from './UserAttachments';
 
 interface UserBlockProps {

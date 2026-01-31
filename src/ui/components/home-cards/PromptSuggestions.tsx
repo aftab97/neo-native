@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { t } from 'ttag';
-import { useLayoutStore, useChatStore } from '../../store';
+import { useLayoutStore, useChatStore } from '../../../store';
 
 const getSuggestions = () => [
   t`What can Neo do?`,

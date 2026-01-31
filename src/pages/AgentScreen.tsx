@@ -3,10 +3,12 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useLayoutStore, useAgentStore, useChatStore, useSessionStore } from '../store';
 import { useMutateChatPrompt, useChatHistory, useGetUser } from '../api';
-import { AgentStartScreen, Chat, ChatInput, Loader } from '../components';
-import { getAgentById } from '../config/agents';
-import { createSessionId } from '../utils/parseStream';
-import type { AgentScreenProps } from '../navigation/types';
+import { AgentStartScreen } from '../ui/components/agents';
+import { Chat, ChatInput } from '../ui/components/chat';
+import { Loader } from '../ui/components/loader/loader';
+import { getAgentById } from '../ui/components/agents/agents';
+import { createSessionId } from '../tools/parseStream';
+import type { AgentScreenProps } from '../routes/types';
 
 export const AgentScreen: React.FC<AgentScreenProps> = () => {
   const route = useRoute<AgentScreenProps['route']>();

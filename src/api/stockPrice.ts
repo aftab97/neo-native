@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_BASE_URL, ENDPOINTS } from '../config/api';
+import { API_BASE_URL, ENDPOINTS } from './config';
 
 interface StockPrice {
   price: number;

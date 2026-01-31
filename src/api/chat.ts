@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import EventSource from "react-native-sse";
 import { queryKeys } from "./queryClient";
-import { ENDPOINTS, API_BASE_URL } from "../config/api";
+import { ENDPOINTS, API_BASE_URL } from "./config";
 import { ChatMessage } from "../types/chat";
 import {
   useChatStore,
@@ -10,8 +10,8 @@ import {
   usePopupStore,
   useFileStore,
 } from "../store";
-import { parseStreamChunk, createMessageId } from "../utils/parseStream";
-import { mergeAllGcsUris } from "../utils/mergeGcsUris";
+import { parseStreamChunk, createMessageId } from "../tools/parseStream";
+import { mergeAllGcsUris } from "../tools/mergeGcsUris";
 
 interface ChatPromptVariables {
   question: string;

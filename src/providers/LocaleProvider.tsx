@@ -4,7 +4,7 @@ import { addLocale, useLocale } from 'ttag';
 import { useLocaleStore } from '../store/localeStore';
 import { useEffectiveLocale, AvailableLocale } from '../hooks/useEffectiveLocale';
 import { getTranslation } from '../i18n';
-import { colors } from '../theme/colors';
+import { colors } from '../ui/foundation/colors/colors';
 
 export const LocaleProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const locale = useLocaleStore((s) => s.locale);

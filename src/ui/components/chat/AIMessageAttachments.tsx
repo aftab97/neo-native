@@ -6,10 +6,10 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { useLayoutStore, usePopupStore } from '../../store';
-import { FileMetaData } from '../../types/chat';
-import { FileIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useLayoutStore, usePopupStore } from '../../../store';
+import { FileMetaData } from '../../../types/chat';
+import { FileIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 import { isImageFile } from './AIMessageImages';
 
 interface AIMessageAttachmentsProps {

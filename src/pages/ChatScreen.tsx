@@ -13,11 +13,12 @@ import {
   useGetUser,
   queryKeys,
 } from '../api';
-import { Chat, ChatInput, Loader } from '../components';
-import { createSessionId, createMessageId } from '../utils/parseStream';
+import { Chat, ChatInput } from '../ui/components/chat';
+import { Loader } from '../ui/components/loader/loader';
+import { createSessionId, createMessageId } from '../tools/parseStream';
 import { useLiveChatListener } from '../hooks';
 import { ChatMessage } from '../types/chat';
-import type { ChatScreenProps } from '../navigation/types';
+import type { ChatScreenProps } from '../routes/types';
 
 export const ChatScreen: React.FC<ChatScreenProps> = () => {
   const route = useRoute<ChatScreenProps['route']>();

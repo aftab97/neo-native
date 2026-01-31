@@ -10,9 +10,9 @@ import {
   Dimensions,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import { useLayoutStore } from '../../store';
-import { ChatMessage, ChatContentType } from '../../types/chat';
-import { colors, codeColors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { ChatMessage, ChatContentType } from '../../../types/chat';
+import { colors, codeColors } from '../../foundation/colors/colors';
 import { AdaptiveCardViewer } from './AdaptiveCardViewer';
 import { ChartViewer } from './ChartViewer';
 import { AIMessageImages, isImageFile } from './AIMessageImages';
@@ -20,7 +20,7 @@ import { AIMessageAttachments } from './AIMessageAttachments';
 import { ChatAIFeedback } from './ChatAIFeedback';
 import { SourcesPills } from './SourcesPills';
 import { RoutingStatus } from './RoutingStatus';
-import { CloseIcon } from '../icons';
+import { CloseIcon } from '../../foundation/icons';
 
 interface AIBlockProps {
   message: ChatMessage;

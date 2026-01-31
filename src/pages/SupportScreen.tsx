@@ -13,8 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { t } from 'ttag';
 import { useLayoutStore } from '../store';
 import { useSupportOverview, findBlock, stripHtml, SupportBlock } from '../api/support';
-import { ChevronLeftIcon } from '../components/icons';
-import { colors } from '../theme/colors';
+import { ChevronLeftIcon } from '../ui/foundation/icons';
+import { colors } from '../ui/foundation/colors/colors';
 
 /**
  * SupportScreen - Help & FAQ page matching web app design

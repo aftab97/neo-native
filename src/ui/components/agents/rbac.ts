@@ -1,4 +1,4 @@
-import { Environment } from './env';
+import { Environment } from '../../../api/env';
 
 /**
  * RBAC group access configuration.

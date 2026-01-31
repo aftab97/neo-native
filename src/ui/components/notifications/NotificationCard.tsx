@@ -6,10 +6,10 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { useNotificationStore, useLayoutStore } from '../../store';
-import { openNotificationLink, type NotificationVariant } from '../../api';
-import { colors } from '../../theme/colors';
-import { CloseIcon } from '../icons';
+import { useNotificationStore, useLayoutStore } from '../../../store';
+import { openNotificationLink, type NotificationVariant } from '../../../api';
+import { colors } from '../../foundation/colors/colors';
+import { CloseIcon } from '../../foundation/icons';
 
 interface NotificationCardProps {
   id: string;

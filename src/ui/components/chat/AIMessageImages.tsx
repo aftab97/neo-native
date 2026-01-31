@@ -9,10 +9,10 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { FileMetaData } from '../../types/chat';
-import { CloseIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { FileMetaData } from '../../../types/chat';
+import { CloseIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 interface AIMessageImagesProps {
   files: FileMetaData[];

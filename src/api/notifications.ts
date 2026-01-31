@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetchJson } from './fetch';
-import { ENDPOINTS } from '../config/api';
+import { ENDPOINTS } from './config';
 import { Linking } from 'react-native';
 
 // Types - matches web app variants

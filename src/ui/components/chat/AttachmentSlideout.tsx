@@ -9,10 +9,10 @@ import {
   Dimensions,
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
-import { useLayoutStore } from '../../store';
-import { useFileUpload } from '../../hooks';
-import { CameraIcon, FileIcon, GlobeIcon, PlusIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { useFileUpload } from '../../../hooks';
+import { CameraIcon, FileIcon, GlobeIcon, PlusIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 import { SlideoutDrawer } from '../common';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

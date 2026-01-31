@@ -13,8 +13,8 @@ import {
   PanGestureHandlerGestureEvent,
   State,
 } from 'react-native-gesture-handler';
-import { useLayoutStore } from '../../store';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { colors } from '../../foundation/colors/colors';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 

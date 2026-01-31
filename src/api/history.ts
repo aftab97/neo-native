@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { apiFetch, apiFetchJson } from './fetch';
 import { queryKeys } from './queryClient';
-import { ENDPOINTS } from '../config/api';
+import { ENDPOINTS } from './config';
 import { ChatHistory, ChatMessage } from '../types/chat';
 import { usePopupStore } from '../store';
 import {
   normaliseActionCardTitle,
   filterActionCardUserMessages,
   shouldHideTitle,
-} from '../utils/filterActionCards';
+} from '../tools/filterActionCards';
 import { useGetUser } from './user';
 import { useMemo } from 'react';
 

@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { AgentMetadata, AgentCardItem } from '../../types/agent';
+import { useLayoutStore } from '../../../store';
+import { AgentMetadata, AgentCardItem } from './types';
 import { AgentCard } from './AgentCard';
-import { AnalystIcon, AgentLibraryLogo } from '../icons';
-import { colors } from '../../theme/colors';
+import { AnalystIcon, AgentLibraryLogo } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 interface AgentStartScreenProps {
   agent: AgentMetadata;

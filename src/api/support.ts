@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { WORDPRESS_URL } from '../config/env';
+import { WORDPRESS_URL } from './env';
 import { getOrFetchJwt } from './sessionToken';
 
 // Support API endpoint

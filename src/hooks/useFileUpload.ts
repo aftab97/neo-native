@@ -12,8 +12,8 @@ import {
   determineErrorState,
   getMimeType,
 } from '../api/fileUpload';
-import { generateUUID, createSessionId } from '../utils/parseStream';
-import { peekZipContents } from '../utils/peekZipContents';
+import { generateUUID, createSessionId } from '../tools/parseStream';
+import { peekZipContents } from '../tools/peekZipContents';
 
 // Allowed file extensions (matching web app)
 const DOCUMENT_EXTENSIONS = [

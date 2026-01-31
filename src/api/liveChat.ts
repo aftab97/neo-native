@@ -6,11 +6,11 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient, QueryClient } from '@tanstack/react-query';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from './config';
 import { ChatMessage, ChatContentType } from '../types/chat';
-import { createMessageId } from '../utils/parseStream';
+import { createMessageId } from '../tools/parseStream';
 import { getOrFetchJwt, getJwtSync } from './sessionToken';
-import { notifyLiveAgentMessage } from '../utils/notifications';
+import { notifyLiveAgentMessage } from '../tools/notifications';
 
 // Logging helpers
 const lcLog = (...args: any[]) => console.log('[livechat]', ...args);

@@ -3,9 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { t } from 'ttag';
-import { useLayoutStore } from '../../store';
-import { useGetUser } from '../../api';
-import { colors, gradients } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { useGetUser } from '../../../api';
+import { colors, gradients } from '../../foundation/colors/colors';
 
 /**
  * Capitalize the first letter of each word in a name

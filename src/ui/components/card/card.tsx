@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { useLayoutStore } from '../../store';
+import { useLayoutStore } from '../../../store';
 
 type CardVariant = 'filled' | 'outlined';
 

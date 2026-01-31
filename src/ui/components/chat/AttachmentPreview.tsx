@@ -7,10 +7,10 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { useFileStore, useLayoutStore, type FileAttachment } from '../../store';
-import { isImageFile } from '../../hooks';
-import { CloseIcon, FileIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useFileStore, useLayoutStore, type FileAttachment } from '../../../store';
+import { isImageFile } from '../../../hooks';
+import { CloseIcon, FileIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 import { AttachmentsLoader } from './AttachmentsLoader';
 
 interface AttachmentPreviewProps {

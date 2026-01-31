@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { AgentCardConfig } from '../../types/agent';
+import { useLayoutStore } from '../../../store';
+import { AgentCardConfig } from './types';
 
 interface AgentCardProps {
   config: AgentCardConfig;

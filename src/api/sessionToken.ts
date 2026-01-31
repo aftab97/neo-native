@@ -6,7 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './fetch';
-import { ENDPOINTS } from '../config/api';
+import { ENDPOINTS } from './config';
 
 const IAP_JWT_KEY = 'iap-jwt';
 const TOKEN_QUERY_KEY = ['sessionToken'];

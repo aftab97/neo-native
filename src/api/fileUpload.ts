@@ -1,4 +1,4 @@
-import { API_BASE_URL, ENDPOINTS } from '../config/api';
+import { API_BASE_URL, ENDPOINTS } from './config';
 import { apiFetch } from './fetch';
 import type { FileErrorDetail } from '../store/fileStore';
 

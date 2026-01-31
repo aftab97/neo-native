@@ -7,12 +7,12 @@ import {
   FlatList,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useLayoutStore } from "../../store";
-import { useResetChat, useAvailableServices } from "../../hooks";
-import { AGENTS } from "../../config/agents";
-import { AgentMetadata } from "../../types/agent";
-import { AnalystIcon, AgentLibraryLogo } from "../icons";
-import { colors } from "../../theme/colors";
+import { useLayoutStore } from "../../../store";
+import { useResetChat, useAvailableServices } from "../../../hooks";
+import { AGENTS } from "../agents/agents";
+import { AgentMetadata } from "../agents/types";
+import { AnalystIcon, AgentLibraryLogo } from "../../foundation/icons";
+import { colors } from "../../foundation/colors/colors";
 
 interface AgentCardItemProps {
   agent: AgentMetadata;

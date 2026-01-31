@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { API_BASE_URL, ENDPOINTS } from '../config/api';
+import { API_BASE_URL, ENDPOINTS } from './config';
 import { usePopupStore } from '../store';
 
 export interface FeedbackRequest {

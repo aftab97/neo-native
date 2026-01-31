@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useGetUser } from '../api/user';
-import { CURRENT_ENV, SHOW_ALL_AGENTS } from '../config/env';
-import { rbacGroups } from '../config/rbac';
-import { AGENTS } from '../config/agents';
+import { CURRENT_ENV, SHOW_ALL_AGENTS } from '../api/env';
+import { rbacGroups } from '../ui/components/agents/rbac';
+import { AGENTS } from '../ui/components/agents/agents';
 
 /**
  * Hook to get available services based on user's RBAC groups

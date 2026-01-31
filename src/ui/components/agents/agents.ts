@@ -1,4 +1,4 @@
-import { AgentMetadata, AGENT_NAMES } from '../types/agent';
+import { AgentMetadata, AGENT_NAMES } from './types';
 
 /**
  * Agent metadata matching the web app (neo3-ui)

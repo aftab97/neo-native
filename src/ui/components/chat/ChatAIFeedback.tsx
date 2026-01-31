@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from 'ttag';
-import { useLayoutStore, usePopupStore } from '../../store';
-import { useMutateSendFeedback } from '../../api';
+import { useLayoutStore, usePopupStore } from '../../../store';
+import { useMutateSendFeedback } from '../../../api';
 import {
   CopyIcon,
   CheckIcon,
@@ -22,8 +22,8 @@ import {
   ThumbsUpFilledIcon,
   ThumbsDownFilledIcon,
   CloseIcon,
-} from '../icons';
-import { colors } from '../../theme/colors';
+} from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 interface ChatAIFeedbackProps {
   message: string;

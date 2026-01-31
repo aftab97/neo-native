@@ -2,8 +2,8 @@ import './global.css';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Providers } from './src/providers';
-import { RootNavigator } from './src/navigation';
-import { ToastContainer } from './src/components/ui';
+import { RootNavigator } from './src/routes';
+import { ToastContainer } from './src/ui/components/toast/toast';
 import { useLayoutStore } from './src/store';
 
 const AppContent: React.FC = () => {

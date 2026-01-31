@@ -9,8 +9,8 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { ChatMessage } from '../../types/chat';
+import { useLayoutStore } from '../../../store';
+import { ChatMessage } from '../../../types/chat';
 import { UserBlock } from './UserBlock';
 import { AIBlock } from './AIBlock';
 

@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { FileIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { FileIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 interface FileAttachment {
   id?: string;

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useLayoutStore } from '../../store';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { colors } from '../../foundation/colors/colors';
 
 interface ChartViewerProps {
   /** Vega-Lite specification as a JSON string or object */

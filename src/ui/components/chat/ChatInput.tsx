@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from 'ttag';
-import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../store';
-import { PlusIcon } from '../icons';
+import { useLayoutStore, useChatStore, useRequestStore, useFileStore } from '../../../store';
+import { PlusIcon } from '../../foundation/icons';
 import { AttachmentSlideout } from './AttachmentSlideout';
 import { AttachmentPreview } from './AttachmentPreview';
 

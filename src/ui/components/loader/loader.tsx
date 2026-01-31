@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { useLayoutStore } from '../../store';
+import { useLayoutStore } from '../../../store';
 
 interface LoaderProps {
   size?: 'small' | 'large';

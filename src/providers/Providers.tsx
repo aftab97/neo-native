@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { queryClient } from '../api/queryClient';
 import { useLayoutStore } from '../store';
 import { fetchAndStoreSessionToken } from '../api/sessionToken';
-import { configureNotifications } from '../utils/notifications';
+import { configureNotifications } from '../tools/notifications';
 import { LocaleProvider } from './LocaleProvider';
 
 interface ProvidersProps {

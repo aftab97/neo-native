@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { t } from 'ttag';
 import { useNavigation } from '@react-navigation/native';
-import { useLayoutStore, useLocaleStore } from '../../store';
-import { SERVICE_NOW_URL } from '../../config/env';
-import { useEffectiveLocale, type AvailableLocale } from '../../hooks';
-import { useGetUser, useGetProfilePicture, useDeleteAllChats } from '../../api';
-import { clearStoredJwt } from '../../api';
+import { useLayoutStore, useLocaleStore } from '../../../store';
+import { SERVICE_NOW_URL } from '../../../api/env';
+import { useEffectiveLocale, type AvailableLocale } from '../../../hooks';
+import { useGetUser, useGetProfilePicture, useDeleteAllChats } from '../../../api';
+import { clearStoredJwt } from '../../../api';
 import { SlideoutDrawer } from '../common';
 import {
   CloseIcon,
@@ -34,8 +34,8 @@ import {
   IssueIcon,
   FileTextIcon,
   ChevronRightIcon,
-} from '../icons';
-import { colors } from '../../theme/colors';
+} from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 type LocaleOption = 'auto' | AvailableLocale;
 

@@ -10,15 +10,11 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { t } from "ttag";
 import { useLayoutStore, useChatStore, useSessionStore, useFileStore } from "../store";
 import { useMutateChatPrompt, useGetUser } from "../api";
-import {
-  WelcomeSection,
-  AgentCards,
-  PromptSuggestions,
-  ChatInput,
-} from "../components";
+import { WelcomeSection, AgentCards, PromptSuggestions } from "../ui/components/home-cards";
+import { ChatInput } from "../ui/components/chat";
 import { useResetChat } from "../hooks";
-import { createSessionId } from "../utils/parseStream";
-import type { HomeScreenProps } from "../navigation/types";
+import { createSessionId } from "../tools/parseStream";
+import type { HomeScreenProps } from "../routes/types";
 
 export const HomeScreen: React.FC<HomeScreenProps> = () => {
   const navigation = useNavigation();

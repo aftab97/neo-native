@@ -7,9 +7,9 @@ import {
   Linking,
   ScrollView,
 } from 'react-native';
-import { useLayoutStore } from '../../store';
-import { colors } from '../../theme/colors';
-import { CloseIcon, SourceIcon, GoogleLogo, FileSpreadsheetIcon } from '../icons';
+import { useLayoutStore } from '../../../store';
+import { colors } from '../../foundation/colors/colors';
+import { CloseIcon, SourceIcon, GoogleLogo, FileSpreadsheetIcon } from '../../foundation/icons';
 import { SlideoutDrawer } from '../common';
 
 // Source type matching web app

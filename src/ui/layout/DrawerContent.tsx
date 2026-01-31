@@ -21,7 +21,7 @@ import {
 } from "../../store";
 import { useResetChat, useAvailableServices } from "../../hooks";
 import { useGetChatTitles, useNotifications, useGetUser, useGetProfilePicture } from "../../api";
-import { AGENTS } from "../../config/agents";
+import { AGENTS } from "../components/agents/agents";
 import {
   PlusIcon,
   ChatIcon,
@@ -31,10 +31,10 @@ import {
   BellIcon,
   HistoryIcon,
   ChevronRightIcon,
-} from "../icons";
-import { NotificationCard } from "../notifications";
-import { SettingsDrawer } from "../settings";
-import { colors } from "../../theme/colors";
+} from "../foundation/icons";
+import { NotificationCard } from "../components/notifications";
+import { SettingsDrawer } from "../components/settings";
+import { colors } from "../foundation/colors/colors";
 
 type TabType = "history" | "notifications";
 

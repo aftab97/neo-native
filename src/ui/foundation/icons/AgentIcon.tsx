@@ -3,7 +3,7 @@ import { RFPProposalIcon } from './RFPProposalIcon';
 import { AnalystIcon } from './AnalystIcon';
 import { InternalAuditIcon } from './InternalAuditIcon';
 import { HandHeartIcon } from './HandHeartIcon';
-import type { AgentIconType } from '../../types/agent';
+import type { AgentIconType } from '../../components/agents/types';
 
 interface AgentIconProps {
   type: AgentIconType;

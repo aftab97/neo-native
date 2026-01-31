@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetchJson } from './fetch';
 import { queryKeys } from './queryClient';
-import { ENDPOINTS } from '../config/api';
+import { ENDPOINTS } from './config';
 import { UserInfo } from '../types/user';
 
 /**

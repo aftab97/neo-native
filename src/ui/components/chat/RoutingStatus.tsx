@@ -13,9 +13,9 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { t } from 'ttag';
-import { useLayoutStore } from '../../store';
-import { ShuffleIcon } from '../icons';
-import { colors } from '../../theme/colors';
+import { useLayoutStore } from '../../../store';
+import { ShuffleIcon } from '../../foundation/icons';
+import { colors } from '../../foundation/colors/colors';
 
 /**
  * Custom hook to persist the last non-empty status
